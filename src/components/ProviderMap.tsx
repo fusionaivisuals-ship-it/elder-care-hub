@@ -56,12 +56,8 @@ export default function ProviderMap({ center, places, focusId, focusNonce = 0 }:
 
   return (
     <MapContainer key={`${center.lat},${center.lng}`} center={[center.lat, center.lng]} zoom={14} scrollWheelZoom={false} className="h-80 w-full rounded-2xl sm:h-[28rem]">
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-        subdomains="abcd"
-        maxZoom={19}
-      />
+      {/* OpenStreetMap standard tiles: no API key needed (CARTO basemaps require a key on non-localhost domains) */}
+      <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
       <KeepSized />
       <Focus id={focusId} markers={markers} nonce={focusNonce} />
       {places.slice(0, 800).map((p) => {
