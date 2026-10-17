@@ -1,0 +1,94 @@
+{
+ "_note": "Demo answers + expected engine output. Use for demo mode and unit tests. 'today' fixed at 2026-10-17 for tests.",
+ "case1": {
+  "title_zh": "示範一：媽媽中風住院，下週出院",
+  "title_en": "Mom's stroke, discharge next week",
+  "answers": {
+   "city": "新北市",
+   "district": "板橋區",
+   "age": "65plus",
+   "indigenous": false,
+   "disabilityCert": false,
+   "dementia": false,
+   "pac": false,
+   "status": "in_hospital",
+   "needs": [
+    "walking_falls",
+    "out_of_bed",
+    "bathing",
+    "eating",
+    "appointments"
+   ],
+   "living": "home_family",
+   "household": "type2"
+  },
+  "expected": {
+   "banner": "say_instead_meets_conditions",
+   "call_first": "ward nurse: ask for 出院準備服務; backup 新北市照管中心 02-2968-3331",
+   "level_selected_for_demo": 6,
+   "care_cap": 28070,
+   "care_you_pay": 1404,
+   "transport_cap": 1840,
+   "transport_you_pay": 166,
+   "respite_cap": 32340,
+   "respite_you_pay": 1617,
+   "devices": "new period: choose group 1 (40,000) or group 2 (60,000); you pay 10%",
+   "providers_serving_district": 1076,
+   "nearest_A": "新北市私立常錦居家長照機構 02-8952-0607",
+   "residential_homes": 25,
+   "open_beds": 124,
+   "community_centers": 94,
+   "c_stations": 7
+  }
+ },
+ "case2": {
+  "title_zh": "示範二：爸爸已在長照，額度快過期",
+  "title_en": "Dad is in the system, money about to expire",
+  "answers": {
+   "city": "臺北市",
+   "district": "萬華區",
+   "age": "65plus",
+   "indigenous": false,
+   "disabilityCert": false,
+   "dementia": false,
+   "pac": false,
+   "status": "assessed",
+   "level": 5,
+   "planApprovedMonth": "2026-05",
+   "devicesUsed": 25000,
+   "deviceApprovedMonth": "2025-02",
+   "respiteUsed": 0,
+   "disabilityDevice": false,
+   "needs": [
+    "walking_falls",
+    "toileting",
+    "memory",
+    "appointments"
+   ],
+   "living": "home_family",
+   "household": "type3"
+  },
+  "expected": {
+   "banner": "Assessed at level 5",
+   "care_cap": 24100,
+   "care_you_pay": 3856,
+   "carryover_period_end": "2026-10-31",
+   "carryover_days_left": 14,
+   "respite_remaining": 32340,
+   "respite_you_pay": 5174,
+   "respite_goes_as_far_as": {
+    "residential_days": 14,
+    "daycare_days": 25,
+    "home_visits_2h": 42
+   },
+   "devices_group": 1,
+   "devices_remaining": 15000,
+   "group2_available_from": "2028-02",
+   "transport_cap": 1680,
+   "transport_you_pay": 504,
+   "residential_subsidy_option": 15000,
+   "call_first": "慈濟居家長照機構 臺北市萬華區莒光路222號5樓 02-23023479",
+   "providers_serving_district": 922
+  }
+ }
+}

@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CareMap design tokens (CLAUDE.md §4). HSL values for shadcn. */
+@layer base {
+  :root {
+    --background: 37 43% 96%; /* #FAF7F2 */
+    --foreground: 195 19% 15%; /* #1F2A2E */
+
+    --card: 0 0% 100%;
+    --card-foreground: 195 19% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 195 19% 15%;
+
+    --primary: 184 69% 20%; /* #0F5257 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 184 30% 93%;
+    --secondary-foreground: 184 69% 20%;
+
+    --muted: 37 25% 92%;
+    --muted-foreground: 192 10% 40%; /* #5B6B70 */
+
+    --accent: 37 80% 57%; /* #E9A23B */
+    --accent-foreground: 195 19% 15%;
+
+    --destructive: 352 51% 46%; /* #B23A48 */
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 155 46% 34%; /* #2E7D5B */
+    --warning: 36 71% 42%; /* #B7791F */
+
+    --tier-a: 184 69% 20%;
+    --tier-b: 37 80% 57%;
+    --tier-c: 155 46% 34%;
+
+    --border: 37 18% 86%;
+    --input: 37 18% 80%;
+    --ring: 184 69% 20%;
+
+    --radius: 1rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+
+  @media (min-width: 768px) {
+    body {
+      font-size: 16px;
+    }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-semibold;
+    line-height: 1.35;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+/* Leaflet popups inherit the app font */
+.leaflet-container {
+  font-family: inherit;
+  z-index: 0;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    font-size: 12pt;
+  }
+
+  .print-card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    break-inside: avoid;
+  }
+
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #555;
+    word-break: break-all;
+  }
+}
