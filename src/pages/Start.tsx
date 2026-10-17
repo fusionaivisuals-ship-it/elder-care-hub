@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,11 +43,11 @@ function Choice<T extends string | number>({ options, selected, onToggle, multi,
             aria-checked={on}
             onClick={() => onToggle(o.value)}
             className={cn(
-              "flex min-h-12 items-center justify-between gap-2 rounded-xl border-2 bg-card px-4 py-2.5 text-left transition-colors duration-150",
+              "flex min-h-12 min-w-0 items-center justify-between gap-2 rounded-xl border-2 bg-card px-3 py-2.5 text-left transition-colors duration-150 sm:px-4",
               on ? "border-primary bg-secondary text-primary" : "border-border hover:border-primary/40",
             )}
           >
-            <span>{o.label}</span>
+            <span className="min-w-0 [overflow-wrap:anywhere]">{o.label}</span>
             {on && <Check className="h-5 w-5 shrink-0" aria-hidden />}
           </button>
         );
@@ -91,6 +91,9 @@ const Start = () => {
   const districts = useData(loadDistricts, []);
   const [i, setI] = useState(0);
   useDocumentTitle(t("start"));
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [i]);
 
   const set = (patch: Partial<Answers>) => setDraft({ ...d, ...patch });
   const steps: StepId[] = useMemo(

@@ -12,17 +12,18 @@ export default function ProviderMap({ center, providers }: { center: { lat: numb
   const { lang } = useLang();
   const pts = providers.filter((p) => p.lat != null && p.lng != null).slice(0, 600);
   return (
-    <MapContainer key={`${center.lat},${center.lng}`} center={[center.lat, center.lng]} zoom={14} scrollWheelZoom={false} preferCanvas className="h-72 w-full rounded-2xl sm:h-96">
+    <MapContainer key={`${center.lat},${center.lng}`} center={[center.lat, center.lng]} zoom={14} scrollWheelZoom={false} className="h-72 w-full rounded-2xl sm:h-96">
       <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       {pts.map((p) => (
         <CircleMarker key={p.id} center={[p.lat!, p.lng!]} radius={p.tier === "A" ? 9 : 7} pathOptions={{ color: "#fff", weight: 1.5, fillColor: TIER_COLOR[p.tier], fillOpacity: 0.9 }}>
           <Popup>
+            {/* divs, not <p>: Leaflet's popup CSS adds large margins to paragraphs */}
             <div className="space-y-1 text-sm">
-              <p className="font-semibold">{p.name}</p>
-              <p>
+              <div className="font-semibold">{p.name}</div>
+              <div>
                 {p.tier} · {TIER_LABELS[p.tier][lang]}
-              </p>
-              <p>{(lang === "zh" ? p.services : p.services_en).join("、")}</p>
+              </div>
+              <div>{(lang === "zh" ? p.services : p.services_en).join("、")}</div>
               {p.phone && (
                 <a href={phoneHref(p.phone)} className="font-semibold text-primary">
                   {phoneDisplay(p.phone)}

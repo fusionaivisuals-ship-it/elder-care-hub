@@ -101,7 +101,7 @@ const Plan = () => {
 
 function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 | 2 | null; onSwitchDemo: (n: 1 | 2) => void }) {
   const { t, lang } = useLang();
-  const { selectedLevel, setSelectedLevel } = usePlan();
+  const { selectedLevel, setSelectedLevel, setDraft } = usePlan();
   const cityKey = cityKeyOf(answers.city);
   const data = useData(() => Promise.all([loadRules(), loadDistricts(), loadProviders(cityKey)]), [cityKey]);
   const community = useData(() => (answers.city === "新北市" ? loadCommunity() : Promise.resolve([] as CommunityPoint[])), [answers.city]);
@@ -132,13 +132,15 @@ function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 |
   return (
     <Page>
       {demo && (
-        <div className="no-print mb-4 flex flex-wrap items-center gap-2 rounded-2xl bg-secondary p-2 text-sm" role="group" aria-label={t("demoMode")}>
-          <span className="px-2 font-semibold text-secondary-foreground">{t("demoMode")}</span>
-          {([1, 2] as const).map((n) => (
-            <Button key={n} size="sm" variant={demo === n ? "default" : "ghost"} className="min-h-10" onClick={() => onSwitchDemo(n)} aria-pressed={demo === n}>
-              {t(n === 1 ? "demo1" : "demo2")}
-            </Button>
-          ))}
+        <div className="no-print mb-4 rounded-2xl bg-secondary p-2 text-sm" role="group" aria-label={t("demoMode")}>
+          <p className="px-2 pb-1 font-semibold text-secondary-foreground">{t("demoMode")}</p>
+          <div className="grid grid-cols-2 gap-2">
+            {([1, 2] as const).map((n) => (
+              <Button key={n} size="sm" variant={demo === n ? "default" : "ghost"} className="h-auto min-h-12 whitespace-normal py-2 leading-snug" onClick={() => onSwitchDemo(n)} aria-pressed={demo === n}>
+                {t(n === 1 ? "demo1" : "demo2")}
+              </Button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -148,7 +150,7 @@ function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 |
           <p className="text-muted-foreground">{t("planFor", { place })}</p>
         </div>
         <Button asChild variant="ghost" size="sm" className="no-print min-h-12 shrink-0">
-          <Link to="/start">
+          <Link to="/start" onClick={() => setDraft({ ...answers })}>
             <Pencil className="mr-1 h-4 w-4" aria-hidden />
             {t("editAnswers")}
           </Link>

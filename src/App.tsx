@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { LanguageProvider } from "@/components/LanguageProvider";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { LoadState } from "@/components/Shell";
 import { PlanProvider } from "@/context/PlanContext";
 import Index from "./pages/Index";
@@ -15,6 +16,7 @@ const App = () => (
   <LanguageProvider>
     <PlanProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <Suspense fallback={<LoadState />}>
           <Routes>
             <Route path="/" element={<Index />} />

@@ -89,7 +89,7 @@ export function CallFirst({ answers, plan, rules, tierA, script }: { answers: An
           <Button asChild variant="link" className="h-auto min-h-10 px-0 text-base">
             <a href="tel:1966">
               <Phone className="mr-1.5 h-4 w-4" aria-hidden />
-              {t("hotline1966")}: 1966
+              {t("call")} 1966 · {t("hotline1966")}
             </a>
           </Button>
         </div>
@@ -131,7 +131,7 @@ function ScriptBlock({ script }: { script: CallScript }) {
         {script.phone && (
           <>
             {" · "}
-            <a href={phoneHref(script.phone)} className="text-primary underline underline-offset-2">
+            <a href={phoneHref(script.phone)} className="inline-flex min-h-12 items-center px-1 text-primary underline underline-offset-2">
               {script.phone}
             </a>
           </>

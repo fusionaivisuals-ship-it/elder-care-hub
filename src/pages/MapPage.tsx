@@ -150,7 +150,7 @@ function ProviderItem({ p, center, district }: { p: Provider; center?: { lat: nu
         {d !== undefined && <span className="text-xs text-muted-foreground">{d.toFixed(1)} km</span>}
       </div>
       <p className="mt-2 font-semibold leading-snug">{p.name}</p>
-      <a href={mapsSearchUrl(p.address)} target="_blank" rel="noreferrer" className="mt-1 flex items-start gap-1 text-sm text-muted-foreground hover:underline">
+      <a href={mapsSearchUrl(p.address)} target="_blank" rel="noreferrer" className="mt-1 flex min-h-12 items-center gap-1 text-sm text-muted-foreground hover:underline">
         <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
         {p.address}
       </a>
@@ -321,7 +321,7 @@ function Community({ providers, community, city, district, center }: { providers
             {points.map((c) => (
               <li key={c.name + c.address} className="rounded-2xl bg-card p-4 shadow-soft">
                 <p className="font-semibold leading-snug">{c.name}</p>
-                <a href={mapsSearchUrl(c.address || c.name)} target="_blank" rel="noreferrer" className="mt-1 flex min-h-10 items-start gap-1 text-sm text-primary underline-offset-2 hover:underline">
+                <a href={mapsSearchUrl(c.address || c.name)} target="_blank" rel="noreferrer" className="mt-1 flex min-h-12 items-center gap-1 text-sm text-primary underline-offset-2 hover:underline">
                   <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                   {c.address || t("openInMaps")}
                   <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
