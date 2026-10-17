@@ -1,0 +1,4 @@
+You are building CareMap inside a repo that Lovable created and syncs with GitHub (branch main).
+Read CLAUDE.md first — section 0 (Lovable compatibility rules) is mandatory: never scaffold a new app, never use Next.js, never edit config files, stay in the existing stack (TanStack Start or Vite + React, TypeScript, Tailwind, shadcn).
+Then read docs/01 to docs/09 (ignore docs/archive) and do Task 0 from docs/06_claude_code_task_prompts.md: inspect the repo and report the stack, package manager, routing pattern and your plan. Do not change any files in Task 0.
+After I confirm, we will do Tasks 1–7 one at a time. After each task: run the build (and tests), report Status · Changed · Verified · Risks · Next, and wait for me to commit and push.

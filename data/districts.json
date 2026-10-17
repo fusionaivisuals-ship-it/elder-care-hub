@@ -1,0 +1,412 @@
+[
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "三峽區",
+  "lat": 24.93598,
+  "lng": 121.37184,
+  "providers_located": 83,
+  "providers_serving": 888,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "三芝區",
+  "lat": 25.25929,
+  "lng": 121.49798,
+  "providers_located": 9,
+  "providers_serving": 773,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "三重區",
+  "lat": 25.04852,
+  "lng": 121.48135,
+  "providers_located": 159,
+  "providers_serving": 994,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "中和區",
+  "lat": 24.99929,
+  "lng": 121.49516,
+  "providers_located": 183,
+  "providers_serving": 1051,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "五股區",
+  "lat": 25.08406,
+  "lng": 121.44242,
+  "providers_located": 22,
+  "providers_serving": 890,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "八里區",
+  "lat": 25.15047,
+  "lng": 121.41013,
+  "providers_located": 13,
+  "providers_serving": 805,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "土城區",
+  "lat": 24.97982,
+  "lng": 121.44888,
+  "providers_located": 92,
+  "providers_serving": 971,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "坪林區",
+  "lat": 24.96208,
+  "lng": 121.64607,
+  "providers_located": 3,
+  "providers_serving": 748,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "平溪區",
+  "lat": 25.02488,
+  "lng": 121.73806,
+  "providers_located": 3,
+  "providers_serving": 747,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "新店區",
+  "lat": 24.97447,
+  "lng": 121.53706,
+  "providers_located": 150,
+  "providers_serving": 923,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "新莊區",
+  "lat": 25.0382,
+  "lng": 121.44688,
+  "providers_located": 153,
+  "providers_serving": 1033,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "板橋區",
+  "lat": 24.99866,
+  "lng": 121.45756,
+  "providers_located": 224,
+  "providers_serving": 1076,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "林口區",
+  "lat": 25.07635,
+  "lng": 121.37464,
+  "providers_located": 43,
+  "providers_serving": 830,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "樹林區",
+  "lat": 24.98231,
+  "lng": 121.41114,
+  "providers_located": 45,
+  "providers_serving": 956,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "永和區",
+  "lat": 25.00852,
+  "lng": 121.51616,
+  "providers_located": 92,
+  "providers_serving": 986,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "汐止區",
+  "lat": 25.06735,
+  "lng": 121.64952,
+  "providers_located": 73,
+  "providers_serving": 809,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "泰山區",
+  "lat": 25.04769,
+  "lng": 121.43033,
+  "providers_located": 34,
+  "providers_serving": 877,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "淡水區",
+  "lat": 25.16657,
+  "lng": 121.44914,
+  "providers_located": 90,
+  "providers_serving": 832,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "深坑區",
+  "lat": 24.99963,
+  "lng": 121.61097,
+  "providers_located": 8,
+  "providers_serving": 776,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "烏來區",
+  "lat": 24.84744,
+  "lng": 121.53706,
+  "providers_located": 6,
+  "providers_serving": 767,
+  "transport_zone": "zone4"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "瑞芳區",
+  "lat": 25.0973,
+  "lng": 121.77456,
+  "providers_located": 11,
+  "providers_serving": 770,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "石碇區",
+  "lat": 25.00074,
+  "lng": 121.64996,
+  "providers_located": 2,
+  "providers_serving": 766,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "石門區",
+  "lat": 25.29016,
+  "lng": 121.5662,
+  "providers_located": 2,
+  "providers_serving": 753,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "萬里區",
+  "lat": 25.18528,
+  "lng": 121.674,
+  "providers_located": 4,
+  "providers_serving": 758,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "蘆洲區",
+  "lat": 25.08487,
+  "lng": 121.4705,
+  "providers_located": 64,
+  "providers_serving": 928,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "貢寮區",
+  "lat": 25.03658,
+  "lng": 121.92642,
+  "providers_located": 4,
+  "providers_serving": 740,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "金山區",
+  "lat": 25.22053,
+  "lng": 121.63416,
+  "providers_located": 7,
+  "providers_serving": 761,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "雙溪區",
+  "lat": 25.03771,
+  "lng": 121.86567,
+  "providers_located": 3,
+  "providers_serving": 746,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "新北市",
+  "city_key": "new-taipei",
+  "district": "鶯歌區",
+  "lat": 24.95606,
+  "lng": 121.34551,
+  "providers_located": 39,
+  "providers_serving": 850,
+  "transport_zone": "zone2"
+ },
+ {
+  "city": "臺北市",
+  "city_key": "taipei",
+  "district": "中山區",
+  "lat": 25.02967,
+  "lng": 121.51275,
+  "providers_located": 110,
+  "providers_serving": 677,
+  "transport_zone": "zone1"
+ },
+ {
+  "city": "臺北市",
+  "city_key": "taipei",
+  "district": "中正區",
+  "lat": 25.03616,
+  "lng": 121.51786,
+  "providers_located": 81,
+  "providers_serving": 681,
+  "transport_zone": "zone1"
+ },
+ {
+  "city": "臺北市",
+  "city_key": "taipei",
+  "district": "信義區",
+  "lat": 25.03482,
+  "lng": 121.56753,
+  "providers_located": 58,
+  "providers_serving": 672,
+  "transport_zone": "zone1"
+ },
+ {
+  "city": "臺北市",
+  "city_key": "taipei",
+  "district": "內湖區",
+  "lat": 25.07422,
+  "lng": 121.59145,
+  "providers_located": 75,
+  "providers_serving": 651,
+  "transport_zone": "zone1"
+ },
+ {
+  "city": "臺北市",
+  "city_key": "taipei",
+  "district": "北投區",
+  "lat": 25.12391,
+  "lng": 121.50643,
+  "providers_located": 104,
+  "providers_serving": 667,
+  "transport_zone": "zone1"
+ },
+ {
+  "city": "臺北市",
+  "city_key": "taipei",
+  "district": "南港區",
+  "lat": 25.04914,
+  "lng": 121.59135,
+  "providers_located": 35,
+  "providers_serving": 634,
+  "transport_zone": "zone1"
+ },
+ {
+  "city": "臺北市",
+  "city_key": "taipei",
+  "district": "士林區",
+  "lat": 25.09747,
+  "lng": 121.52252,
+  "providers_located": 94,
+  "providers_serving": 677,
+  "transport_zone": "zone1"
+ },
+ {
+  "city": "臺北市",
+  "city_key": "taipei",
+  "district": "大同區",
+  "lat": 25.05943,
+  "lng": 121.51356,
+  "providers_located": 66,
+  "providers_serving": 664,
+  "transport_zone": "zone1"
+ },
+ {
+  "city": "臺北市",
+  "city_key": "taipei",
+  "district": "大安區",
+  "lat": 25.03209,
+  "lng": 121.54678,
+  "providers_located": 115,
+  "providers_serving": 706,
+  "transport_zone": "zone1"
+ },
+ {
+  "city": "臺北市",
+  "city_key": "taipei",
+  "district": "文山區",
+  "lat": 24.99526,
+  "lng": 121.55504,
+  "providers_located": 91,
+  "providers_serving": 652,
+  "transport_zone": "zone1"
+ },
+ {
+  "city": "臺北市",
+  "city_key": "taipei",
+  "district": "松山區",
+  "lat": 25.05372,
+  "lng": 121.55538,
+  "providers_located": 95,
+  "providers_serving": 680,
+  "transport_zone": "zone1"
+ },
+ {
+  "city": "臺北市",
+  "city_key": "taipei",
+  "district": "萬華區",
+  "lat": 25.0306,
+  "lng": 121.49878,
+  "providers_located": 62,
+  "providers_serving": 650,
+  "transport_zone": "zone1"
+ }
+]
