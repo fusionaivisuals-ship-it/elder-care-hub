@@ -1,32 +1,32 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Accessibility,
   AlarmClock,
+  ArrowLeft,
   ArrowRight,
   BadgeCheck,
   Bus,
   ClipboardList,
   Coffee,
-  FileText,
   HandHeart,
   Home,
   Hospital,
   Info,
-  ListChecks,
   MapPinned,
   Pencil,
   Phone,
   Printer,
   Receipt,
   TriangleAlert,
-  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLang } from "@/components/LanguageProvider";
 import { LoadState, Page, Section, TierBadge } from "@/components/Shell";
-import { CallButton, CallFirst } from "@/components/plan/CallFirst";
-import { BenefitCard, Callout, MoneySplit, Notes } from "@/components/plan/PlanParts";
+import { ActionPlan } from "@/components/plan/ActionPlan";
+import { CallButton } from "@/components/plan/CallFirst";
+import { LevelPicker } from "@/components/plan/LevelPicker";
+import { BenefitCard, Callout, MoneySplit } from "@/components/plan/PlanParts";
 import { usePlan } from "@/context/PlanContext";
 import { useData } from "@/hooks/useData";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -47,7 +47,7 @@ import {
 } from "@/lib/data";
 import { CATEGORY_LABELS, ntd, ntdRange, pct, TIER_LABELS } from "@/lib/i18n";
 import { districtName, placeName } from "@/lib/places";
-import { computePlan, incomeBandRanges, LEVELS, rate, type PlanResult } from "@/lib/planEngine";
+import { computePlan, incomeBandRanges, rate, type PlanResult } from "@/lib/planEngine";
 import type { Answers, CommunityPoint, District, Level, Provider, Rules } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -102,10 +102,14 @@ const Plan = () => {
 
 function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 | 2 | null; onSwitchDemo: (n: 1 | 2) => void }) {
   const { t, lang } = useLang();
+  const [params, setParams] = useSearchParams();
   const { selectedLevel, setSelectedLevel, setDraft } = usePlan();
+  // Assessed parents: their level is fixed; the picker only previews other levels for comparison
+  const [compareLevel, setCompareLevel] = useState<Level | undefined>();
   const cityKey = cityKeyOf(answers.city);
   const data = useData(() => Promise.all([loadRules(), loadDistricts(), loadProviders(cityKey)]), [cityKey]);
   const community = useData(() => (answers.city === "新北市" ? loadCommunity() : Promise.resolve([] as CommunityPoint[])), [answers.city]);
+  useEffect(() => setCompareLevel(undefined), [answers]);
 
   const computed = useMemo(() => {
     if (!data.data) return null;
@@ -126,6 +130,21 @@ function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 |
   }
   const { rules, districts, providers, plan, tierA, script } = computed;
   const place = placeName(answers.city, answers.district, lang);
+  const hasParts = plan.showBenefits;
+  const part = hasParts && params.get("part") === "2" ? 2 : 1;
+  const goPart = (p: 1 | 2) => {
+    const next = new URLSearchParams(params);
+    if (p === 2) next.set("part", "2");
+    else next.delete("part");
+    setParams(next);
+    // land at the start of the chosen part (just under the sticky top bar), not at the top of the page
+    requestAnimationFrame(() => {
+      const nav = document.getElementById("plan-parts");
+      if (nav) window.scrollTo({ top: nav.getBoundingClientRect().top + window.scrollY - 56 });
+    });
+  };
+  const viewLevel = plan.assessed ? compareLevel ?? answers.level : selectedLevel;
+  const chooseLevel = (l?: Level) => (plan.assessed ? setCompareLevel(l) : setSelectedLevel(l));
 
   const bannerTone = plan.banner.kind === "assessed" ? "success" : plan.banner.kind === "meets" ? "info" : "warning";
   const bannerIcon = plan.banner.kind === "assessed" ? <BadgeCheck className="h-6 w-6" /> : plan.banner.kind === "meets" ? <Info className="h-6 w-6" /> : <TriangleAlert className="h-6 w-6" />;
@@ -166,46 +185,59 @@ function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 |
 
       <AlertsRow plan={plan} />
 
-      <CallFirst answers={answers} plan={plan} rules={rules} tierA={tierA} script={script} />
-
-      {plan.showBenefits ? (
-        <>
-          <Hero answers={answers} plan={plan} rules={rules} onSelect={setSelectedLevel} />
-          <BenefitCards answers={answers} plan={plan} rules={rules} />
-        </>
-      ) : (
-        <Section title={t("notEligibleNext")} icon={<Users className="h-5 w-5 text-primary" aria-hidden />}>
-          <Callout tone="success" icon={<HandHeart className="h-6 w-6" />} title={t("communityFirstCard")}>
-            <p>{lang === "zh" ? rules.eligibility.if_not_eligible.zh : rules.eligibility.if_not_eligible.en}</p>
-            <Button asChild className="no-print mt-3 min-h-12">
-              <Link to="/map?tab=community">
-                {t("tabCommunity")}
-                <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
-              </Link>
-            </Button>
-          </Callout>
-        </Section>
+      {hasParts && (
+        <nav id="plan-parts" aria-label={t("partsLabel")} className="no-print sticky top-14 z-10 -mx-4 mt-6 bg-background/95 px-4 py-2 backdrop-blur-sm">
+          <div role="tablist" className="grid grid-cols-2 gap-2 rounded-2xl bg-muted p-1">
+            {([1, 2] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                role="tab"
+                id={`part-tab-${p}`}
+                aria-selected={part === p}
+                aria-controls={`part-${p}`}
+                onClick={() => goPart(p)}
+                className={cn(
+                  "flex min-h-12 items-center justify-center gap-2 rounded-xl px-2 text-sm font-semibold transition-colors duration-150 sm:text-base",
+                  part === p ? "bg-card text-primary shadow-soft" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs", part === p ? "bg-primary text-primary-foreground" : "bg-border text-foreground")}>{p}</span>
+                {t(p === 1 ? "part1Tab" : "part2Tab")}
+              </button>
+            ))}
+          </div>
+        </nav>
       )}
 
-      <HowToApply rules={rules} docs={script.docs[lang]} />
+      {/* Both parts stay in the DOM so the printed plan contains everything */}
+      <div id="part-1" role={hasParts ? "tabpanel" : undefined} aria-labelledby={hasParts ? "part-tab-1" : undefined} className={cn("mt-6", part !== 1 && "hidden print:block")}>
+        <ActionPlan answers={answers} plan={plan} rules={rules} tierA={tierA} script={script} />
+        <Hotlines rules={rules} />
+        {hasParts && (
+          <button
+            type="button"
+            onClick={() => goPart(2)}
+            className="no-print mt-8 flex min-h-16 w-full items-center justify-between gap-3 rounded-2xl bg-primary px-5 py-3 text-left text-primary-foreground shadow-soft transition-opacity duration-150 hover:opacity-95"
+          >
+            <span>
+              <span className="block text-lg font-semibold">{t("toPart2")}</span>
+              <span className="block text-sm opacity-90">{t("toPart2Sub")}</span>
+            </span>
+            <ArrowRight className="h-6 w-6 shrink-0" aria-hidden />
+          </button>
+        )}
+      </div>
 
-      <Section title={t("hotlinesTitle")} icon={<Phone className="h-5 w-5 text-primary" aria-hidden />}>
-        <ul className="grid gap-2 sm:grid-cols-2">
-          {rules.hotlines
-            .filter((h) => h.number !== "1955") // foreign caregiver line: out of scope
-            .map((h) => (
-              <li key={h.number}>
-                <a href={`tel:${h.number.replace(/\D/g, "")}`} className="flex min-h-12 items-center justify-between gap-2 rounded-xl bg-card px-4 py-2 shadow-soft hover:bg-secondary">
-                  <span className="text-sm">
-                    {lang === "zh" ? h.zh : h.en}
-                    {!h.verified && <span className="ml-1 text-xs text-muted-foreground">({t("unverified")})</span>}
-                  </span>
-                  <span className="font-semibold text-primary">{h.number}</span>
-                </a>
-              </li>
-            ))}
-        </ul>
-      </Section>
+      {hasParts && (
+        <div id="part-2" role="tabpanel" aria-labelledby="part-tab-2" className={cn("mt-6", part !== 2 && "hidden print:block")}>
+          <BenefitEstimate answers={answers} plan={plan} rules={rules} viewLevel={viewLevel} onChoose={chooseLevel} />
+          <Button variant="ghost" className="no-print mt-6 min-h-12" onClick={() => goPart(1)}>
+            <ArrowLeft className="mr-1 h-4 w-4" aria-hidden />
+            {t("toPart1")}
+          </Button>
+        </div>
+      )}
 
       <div className="no-print mt-8 flex flex-col items-start gap-1">
         <Button variant="outline" className="min-h-12 text-base" onClick={() => window.print()}>
@@ -217,6 +249,29 @@ function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 |
 
       <ProvidersSummary answers={answers} plan={plan} providers={providers} districts={districts} community={community.data ?? []} />
     </Page>
+  );
+}
+
+function Hotlines({ rules }: { rules: Rules }) {
+  const { t, lang } = useLang();
+  return (
+    <Section title={t("hotlinesTitle")} icon={<Phone className="h-5 w-5 text-primary" aria-hidden />}>
+      <ul className="grid gap-2 sm:grid-cols-2">
+        {rules.hotlines
+          .filter((h) => h.number !== "1955") // foreign caregiver line: out of scope
+          .map((h) => (
+            <li key={h.number}>
+              <a href={`tel:${h.number.replace(/\D/g, "")}`} className="flex min-h-12 items-center justify-between gap-2 rounded-xl bg-card px-4 py-2 shadow-soft hover:bg-secondary">
+                <span className="text-sm">
+                  {lang === "zh" ? h.zh : h.en}
+                  {!h.verified && <span className="ml-1 text-xs text-muted-foreground">({t("unverified")})</span>}
+                </span>
+                <span className="whitespace-nowrap font-semibold text-primary">{h.number}</span>
+              </a>
+            </li>
+          ))}
+      </ul>
+    </Section>
   );
 }
 
@@ -245,78 +300,74 @@ function AlertsRow({ plan }: { plan: PlanResult }) {
   );
 }
 
-function Hero({ answers, plan, rules, onSelect }: { answers: Answers; plan: PlanResult; rules: Rules; onSelect: (l?: Level) => void }) {
+/** Part 2: copay rates → level picker + guide → benefit details → tax. */
+function BenefitEstimate({ answers, plan, rules, viewLevel, onChoose }: { answers: Answers; plan: PlanResult; rules: Rules; viewLevel?: Level; onChoose: (l?: Level) => void }) {
   const { t, tx, lang } = useLang();
   const band = answers.incomeBand;
   const typeNo = { type1: 1, type2: 2, type3: 3 }[plan.copayType];
-  return (
-    <section className="print-card mt-6 rounded-2xl bg-primary p-4 text-primary-foreground shadow-soft sm:p-5" aria-label={t("heroGovPays")}>
-      {plan.care ? (
-        <>
-          <p className="text-sm opacity-90">{plan.levelSource === "selected" ? t("heroIfLevel", { level: plan.care.level }) : t("heroCareOnly", { level: plan.care.level })}</p>
-          <div className="mt-2 grid grid-cols-2 gap-3">
-            <div>
-              <div className="text-sm opacity-90">{t("heroGovPays")}</div>
-              <div className="text-3xl font-semibold">{ntd(plan.care.govPays)}</div>
-            </div>
-            <div>
-              <div className="text-sm opacity-90">
-                {t("heroYouPay")} · {pct(plan.care.rate)}
-              </div>
-              <div className="text-3xl font-semibold text-accent">{ntd(plan.care.youPay)}</div>
-            </div>
-          </div>
-        </>
-      ) : plan.showLevelSelector ? (
-        <p className="text-lg font-semibold">{t("heroPickLevel")}</p>
-      ) : null}
-      <p className="mt-3 text-sm opacity-90">{tx(rules.eligibility.income_does_not_reduce_benefit)}</p>
-      {band && band !== "unknown" && (
-        <p className="mt-2 text-sm opacity-90">
-          {t("hhEstimate", {
-            range: ntdRange(incomeBandRanges(rules, answers.city)[band], lang),
-            type: t("copayTypeLabel", { n: typeNo, pct: pct(rate(rules, "care_professional", plan.copayType)) }),
-          })}
-        </p>
-      )}
+  const zone = plan.transport?.zone ?? "zone1";
+  const rates = [
+    { label: t("copayCare"), r: rate(rules, "care_professional", answers.household) },
+    { label: t("copayDevices"), r: rate(rules, "devices_home", answers.household) },
+    { label: t("copayTransport"), r: rate(rules, `transport_${zone}`, answers.household) },
+  ];
 
-      {plan.showLevelSelector && plan.careTable && (
-        <div className="mt-4 rounded-xl bg-card p-3 text-foreground">
-          <p className="font-semibold">{t("levelSelectorTitle")}</p>
-          <p className="text-sm text-muted-foreground">{tx(rules._wording_rules.amounts_without_level)}</p>
-          <p className="mb-2 mt-2 rounded-lg bg-muted/60 p-2 text-sm text-foreground">{t("levelHow")}</p>
-          <div role="radiogroup" aria-label={t("levelSelectorTitle")} className="space-y-1">
-            {LEVELS.map((lv) => {
-              const row = plan.careTable!.find((r) => r.level === lv)!;
-              const on = plan.level === lv;
-              return (
-                <button
-                  key={lv}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => onSelect(on ? undefined : lv)}
-                  className={cn("grid min-h-12 w-full grid-cols-[4.5rem_1fr_1fr] items-center gap-2 rounded-lg px-2 text-left transition-colors duration-150", on ? "bg-secondary font-semibold text-primary" : "hover:bg-muted")}
-                >
-                  <span>{t("levelN", { n: lv })}</span>
-                  <span className="text-sm">
-                    <span className="block text-xs text-muted-foreground">{t("govPays")}</span>
-                    {ntd(row.govPays)}
-                  </span>
-                  <span className="text-sm">
-                    <span className="block text-xs text-muted-foreground">{t("youPay")}</span>
-                    {ntd(row.youPay)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">{t("levelSelectorHint")}</p>
+  return (
+    <div className="space-y-6">
+      <p className="text-muted-foreground">{t("part2Intro")}</p>
+
+      <section aria-labelledby="copay-h" className="print-card rounded-2xl bg-card p-4 shadow-soft sm:p-5">
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 id="copay-h" className="text-lg">
+            {t("copayTitle")}
+          </h3>
+          <span className="rounded-full bg-secondary px-2.5 py-0.5 text-sm font-semibold text-secondary-foreground">{t("copayTypeN", { n: typeNo })}</span>
         </div>
-      )}
-    </section>
+        <ul className="mt-3 grid grid-cols-3 gap-2">
+          {rates.map((x) => (
+            <li key={x.label} className="rounded-xl bg-muted/60 p-2 text-center">
+              <span className="block text-2xl font-semibold text-primary">{pct(x.r)}</span>
+              <span className="block text-xs leading-snug text-muted-foreground">{x.label}</span>
+            </li>
+          ))}
+        </ul>
+        {band && band !== "unknown" ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            {t("hhEstimate", {
+              range: ntdRange(incomeBandRanges(rules, answers.city)[band], lang),
+              type: t("copayTypeLabel", { n: typeNo, pct: pct(rate(rules, "care_professional", plan.copayType)) }),
+            })}
+          </p>
+        ) : plan.householdUnknown ? (
+          <p className="mt-3 text-sm text-muted-foreground">{t("hhUnknownTip")}</p>
+        ) : null}
+        <p className="mt-2 text-sm text-muted-foreground">{tx(rules.eligibility.income_does_not_reduce_benefit)}</p>
+      </section>
+
+      <LevelPicker answers={answers} plan={plan} rules={rules} viewLevel={viewLevel} onChoose={onChoose} />
+
+      <section aria-labelledby="details-h">
+        <h3 id="details-h" className="text-xl">
+          {plan.level ? t("detailsTitleLevel", { n: plan.level }) : t("detailsTitleNoLevel")}
+        </h3>
+        {!plan.level && answers.living !== "residential" && <p className="mt-1 text-sm text-muted-foreground">{t("detailsNoLevelHint")}</p>}
+        <BenefitCards answers={answers} plan={plan} rules={rules} />
+      </section>
+
+      <div className="print-card rounded-2xl bg-card p-4 shadow-soft">
+        <p className="mb-1 flex items-center gap-1.5 font-semibold">
+          <Receipt className="h-4 w-4 text-primary" aria-hidden />
+          {t("taxTitle")}
+        </p>
+        <p className="text-sm text-muted-foreground">{tx(rules.tax_deduction)}</p>
+        <a href={rules._sources.tax_deduction} target="_blank" rel="noreferrer" className="mt-1 inline-flex min-h-10 items-center text-sm text-primary underline underline-offset-2">
+          {t("source")}
+        </a>
+      </div>
+    </div>
   );
 }
+
 
 function BenefitCards({ answers, plan, rules }: { answers: Answers; plan: PlanResult; rules: Rules }) {
   const { t, tx } = useLang();
@@ -493,46 +544,6 @@ function BenefitCards({ answers, plan, rules }: { answers: Answers; plan: PlanRe
         </BenefitCard>
       )}
     </div>
-  );
-}
-
-function HowToApply({ rules, docs }: { rules: Rules; docs: string[] }) {
-  const { t, tx } = useLang();
-  return (
-    <Section title={t("applyTitle")} icon={<ListChecks className="h-5 w-5 text-primary" aria-hidden />}>
-      <ol className="space-y-3">
-        {rules.application_process.map((s) => (
-          <li key={s.step} className="flex gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">{s.step}</span>
-            <span className="pt-0.5">{tx(s)}</span>
-          </li>
-        ))}
-      </ol>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <div className="print-card rounded-2xl bg-card p-4 shadow-soft">
-          <p className="mb-1 flex items-center gap-1.5 font-semibold">
-            <FileText className="h-4 w-4 text-primary" aria-hidden />
-            {t("docsTitle")}
-          </p>
-          <ul className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
-            {docs.map((d) => (
-              <li key={d}>{d}</li>
-            ))}
-          </ul>
-        </div>
-        <div className="print-card rounded-2xl bg-card p-4 shadow-soft">
-          <p className="mb-1 flex items-center gap-1.5 font-semibold">
-            <Receipt className="h-4 w-4 text-primary" aria-hidden />
-            {t("taxTitle")}
-          </p>
-          <p className="text-sm text-muted-foreground">{tx(rules.tax_deduction)}</p>
-          <a href={rules._sources.tax_deduction} target="_blank" rel="noreferrer" className="mt-1 inline-flex min-h-10 items-center text-sm text-primary underline underline-offset-2">
-            {t("source")}
-          </a>
-        </div>
-      </div>
-      <Notes items={[rules.quota_rules.reassessment]} />
-    </Section>
   );
 }
 

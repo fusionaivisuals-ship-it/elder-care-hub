@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Copy, ExternalLink, MapPin, Phone, PhoneCall, Stethoscope } from "lucide-react";
+import { Check, Copy, ExternalLink, MapPin, Phone, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLang } from "@/components/LanguageProvider";
 import type { CallScript } from "@/lib/callScript";
@@ -42,11 +42,7 @@ export function CallFirst({ answers, plan, rules, tierA, script }: { answers: An
   );
 
   return (
-    <section aria-labelledby="callfirst-h" className="print-card mt-6 rounded-2xl border-2 border-primary bg-card p-4 shadow-soft sm:p-5">
-      <h2 id="callfirst-h" className="mb-3 flex items-center gap-2 text-xl text-primary">
-        <PhoneCall className="h-6 w-6" aria-hidden />
-        {t("callFirst")}
-      </h2>
+    <div id="callfirst-h" className="print-card rounded-2xl border-2 border-primary bg-card p-4 shadow-soft sm:p-5">
 
       {plan.callFirst === "ward_nurse" && (
         <div className="space-y-4">
@@ -87,7 +83,7 @@ export function CallFirst({ answers, plan, rules, tierA, script }: { answers: An
 
       {plan.callFirst !== "hotline_1966" && (
         <div className="mt-3">
-          <Button asChild variant="link" className="h-auto min-h-10 px-0 text-base">
+          <Button asChild variant="link" className="h-auto min-h-12 whitespace-normal px-0 text-left text-base">
             <a href="tel:1966">
               <Phone className="mr-1.5 h-4 w-4" aria-hidden />
               {t("call")} 1966 · {t("hotline1966")}
@@ -97,7 +93,7 @@ export function CallFirst({ answers, plan, rules, tierA, script }: { answers: An
       )}
 
       <ScriptBlock script={script} />
-    </section>
+    </div>
   );
 }
 
@@ -143,12 +139,6 @@ function ScriptBlock({ script }: { script: CallScript }) {
           <p key={i}>{l}</p>
         ))}
       </blockquote>
-      <p className="mt-3 font-semibold">{t("scriptDocs")}</p>
-      <ul className="mt-1 list-disc space-y-0.5 pl-5 text-muted-foreground">
-        {docs.map((d) => (
-          <li key={d}>{d}</li>
-        ))}
-      </ul>
     </div>
   );
 }

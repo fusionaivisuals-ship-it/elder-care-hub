@@ -127,6 +127,7 @@ export interface Rules {
   };
   eligibility: {
     identity_conditions: (LText & { id: string })[];
+    levels: { range: string; benefit_levels: string; level1: string; definition: LText };
     if_not_eligible: LText;
     income_does_not_reduce_benefit: LText;
   };

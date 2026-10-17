@@ -19,7 +19,8 @@
     "income_limits_2026": "https://service.docms.gov.taipei/attachments/115-income-limit.pdf",
     "taipei_midlow_household": "https://dosw.gov.taipei/cp.aspx?n=B75CE261826F1C11",
     "taipei_senior_allowance": "https://dosw.gov.taipei/cp.aspx?n=FCF3DAE98DDA289F",
-    "ntpc_senior_allowance": "https://welfare.ntpc.gov.tw/viewService/show/22036"
+    "ntpc_senior_allowance": "https://welfare.ntpc.gov.tw/viewService/show/22036",
+    "levels_definition": "https://www.mohw.gov.tw/cp-5265-65958-1.html"
   },
   "_wording_rules": {
     "never_say": [
@@ -73,7 +74,12 @@
     "levels": {
       "range": "1-8",
       "benefit_levels": "2-8",
-      "level1": "Level 1 receives no benefits (辦法第7條)"
+      "level1": "Level 1 receives no benefits (辦法第7條)",
+      "definition": {
+        "zh": "「長照需要等級」按照顧管理專員評估出來的失能程度，由輕至重共分為1至8級，其中第2至8級則是按等級給付不同的長照服務額度。",
+        "en": "The care-need level is set from the disability level assessed by the government care manager, from 1 (mildest) to 8 (most severe). Levels 2 to 8 receive different benefit amounts by level."
+      },
+      "_note": "Official MOHW wording. Do not map levels to mild/moderate/severe labels: no official mapping exists and unofficial sources disagree."
     },
     "if_not_eligible": {
       "zh": "可使用社區照顧關懷據點、巷弄長照站、文化健康站等健康促進、共餐、預防及延緩失能服務",

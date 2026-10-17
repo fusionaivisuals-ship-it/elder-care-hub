@@ -35,7 +35,20 @@
    5. Needs (multi): bathing, eating/swallowing, walking/falls, getting out of bed, toileting, memory/confusion, medicine, getting to appointments, home is unsafe.
    6. Living situation: at home with family caring / at home, nobody caring yet / lives in a residential facility (→ moved in before 2023-01-01? + receives: disability residential subsidy / public placement / veterans' home public bed / none).
    7. Household status: 低收入戶或中低收入戶 / receives 中低收入老人生活津貼 or 身障生活補助 / general / not sure (= general + tip).
-3. **`/plan` Plan**
+3. **`/plan` Plan** (updated 2026-10-17: split into two parts)
+   - **Layout:** header, eligibility banner and alerts are always on top. Below them are two tabs, "① 打電話與準備 Call & prepare" and "② 補助試算 Benefit estimate", switched by `?part=2`. Both parts are always printed.
+   - **Part 1, a numbered 3-step checklist:**
+     1. 先打給這裡: who to call, with tap-to-call and the call script.
+     2. 準備好這些: a document checklist, plus what to tell the assessor (the needs), or for assessed parents what to raise with the case manager (reset date, unused respite).
+     3. 接下來會發生什麼: the official 4-step process with "你在這裡", based on status. Not eligible or level 1 shows the community card instead.
+     - Then the hotlines and a "下一步：看看補助有多少" button.
+   - **Part 2:**
+     - copay rates for this household (care/respite, devices, transport) with the income-band estimate note;
+     - the **level picker**: a 1–8 scale, mild → severe, showing each level's monthly care cap. Not assessed: nothing is pre-selected and a tapped level is labelled "example, not a prediction". Assessed: their level is pre-selected and badged "你的等級", and other levels are comparison only (the details stay on their level);
+     - the **level guide** for the chosen level: what that level unlocks (care, respite, transport and devices the same at every level, residential subsidy at level 4+), plus "等級怎麼決定？" (official MOHW definition and reassessment rule) and a comparison table of all levels;
+     - then the benefit details cards, the tax deduction, and providers near you.
+   - **No mild/moderate/severe labels:** levels are never given these labels, because no official mapping exists.
+   - **Original screen spec below.**
    - **Eligibility banner:** exact wording from the rules file.
    - **Pinned "先打給這裡 Call this first":**
      - in hospital → "ask the ward nurse for 出院準備服務" + the city LTC center;

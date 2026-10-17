@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildCallScript } from "./callScript";
 import { districtCentroid, findDistrict, getDistricts, getProvidersFor, nearestTierA, providersServing } from "./data";
-import { carryoverPeriod, computeDevices, computePlan, computeResidential, computeRespite, computeTransport, householdFromIncome, identityOk, incomeBandRanges } from "./planEngine";
+import { carryoverPeriod, currentProcessStep, levelGuide, computeDevices, computePlan, computeResidential, computeRespite, computeTransport, householdFromIncome, identityOk, incomeBandRanges } from "./planEngine";
 import type { Answers, DemoCases, District, Provider, Rules } from "./types";
 
 const read = <T,>(f: string): T => JSON.parse(readFileSync(resolve(__dirname, "../../public/data", f), "utf-8"));
@@ -133,6 +133,26 @@ describe("income bands (2026 official thresholds)", () => {
     expect(householdFromIncome(rules, "allowance2", "55_64")).toBe("type3");
     expect(householdFromIncome(rules, "general", "65plus")).toBe("type3");
     expect(householdFromIncome(rules, "unknown", "65plus")).toBe("unknown");
+  });
+});
+
+describe("level guide", () => {
+  it("level 6 type2: care 28070 / pay 1404, respite 32340 / 1617, residential yes", () => {
+    const g = levelGuide(rules, 6, "type2");
+    expect(g.care).toMatchObject({ cap: 28070, youPay: 1404 });
+    expect(g.respite).toMatchObject({ cap: 32340, youPay: 1617 });
+    expect(g.residentialEligible).toBe(true);
+  });
+  it("level 3 no residential; level 7 respite 48510; level 1 no benefits", () => {
+    expect(levelGuide(rules, 3, "type3").residentialEligible).toBe(false);
+    expect(levelGuide(rules, 7, "type3").respite?.cap).toBe(48510);
+    expect(levelGuide(rules, 1, "type3")).toEqual({ level: 1, hasBenefits: false, residentialEligible: false });
+  });
+  it("process step from status", () => {
+    expect(currentProcessStep("never")).toBe(0);
+    expect(currentProcessStep("in_hospital")).toBe(0);
+    expect(currentProcessStep("waiting")).toBe(1);
+    expect(currentProcessStep("assessed")).toBe(2);
   });
 });
 

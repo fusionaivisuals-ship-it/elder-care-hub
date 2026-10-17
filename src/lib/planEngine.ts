@@ -301,6 +301,34 @@ export function computeResidential(
   return { status: "not_eligible", monthly: 0, cannotCombine };
 }
 
+// ---------- level guide (what a level unlocks; never a prediction) ----------
+
+export interface LevelGuide {
+  level: Level;
+  hasBenefits: boolean;
+  care?: Money;
+  respite?: Money; // yearly cap at this level
+  residentialEligible: boolean; // level 4+ (residential subsidy)
+}
+
+export const RESIDENTIAL_MIN_LEVEL = 4;
+
+export function levelGuide(rules: Rules, level: Level, household: Household): LevelGuide {
+  if (level < 2) return { level, hasBenefits: false, residentialEligible: false };
+  return {
+    level,
+    hasBenefits: true,
+    care: computeCare(rules, level, household),
+    respite: money(respiteCap(rules, level), rate(rules, "respite", household)),
+    residentialEligible: level >= RESIDENTIAL_MIN_LEVEL,
+  };
+}
+
+/** Where the family is in the official 4-step process (application_process). 0-based index of the current step. */
+export function currentProcessStep(status: Answers["status"]): number {
+  return status === "assessed" ? 2 : status === "waiting" ? 1 : 0;
+}
+
 // ---------- the whole plan ----------
 
 export interface PlanOptions {
