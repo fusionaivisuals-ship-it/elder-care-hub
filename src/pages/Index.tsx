@@ -9,7 +9,7 @@ import { DATA_UPDATED } from "@/lib/i18n";
 
 const Index = () => {
   const { t } = useLang();
-  const { setDraft, setAnswers, setSelectedLevel, setDemo } = usePlan();
+  const { setDraft, setAnswers, setSelectedLevel, setDemo, setWizardStep } = usePlan();
   useDocumentTitle("");
 
   const fresh = () => {
@@ -17,6 +17,7 @@ const Index = () => {
     setAnswers(null);
     setSelectedLevel(undefined);
     setDemo(null);
+    setWizardStep(0);
   };
 
   const demos = [

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { dict, format, type DictKey } from "@/lib/i18n";
+import { KEYS, load, save } from "@/lib/storage";
 import type { Lang, LText } from "@/lib/types";
 
 interface LangCtx {
@@ -12,10 +13,11 @@ interface LangCtx {
 const Ctx = createContext<LangCtx | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>("zh");
+  const [lang, setLang] = useState<Lang>(() => (load<Lang>("local", KEYS.lang, "zh") === "en" ? "en" : "zh"));
 
   useEffect(() => {
     document.documentElement.lang = lang === "zh" ? "zh-Hant-TW" : "en";
+    save("local", KEYS.lang, lang);
   }, [lang]);
 
   const tx = useCallback((text: LText | undefined, vars?: Record<string, string | number>) => (text ? format(text[lang], vars) : ""), [lang]);

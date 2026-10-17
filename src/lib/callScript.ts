@@ -85,7 +85,7 @@ export function buildCallScript(a: Answers, plan: PlanResult, rules: Rules, tier
     zh.push("如果您不是我們的個管員，請幫我轉給負責的個管員，或告訴我該打給哪裡。");
     en.push("If you're not our case manager, please transfer me or tell me who to call.");
     return {
-      who: tierA ? { zh: tierA.name, en: `${tierA.name} (case-management center)` } : { zh: "你的A單位個管員", en: "Your A-unit case manager" },
+      who: tierA ? { zh: tierA.name, en: `${tierA.name_en ?? tierA.name} (case-management center)` } : { zh: "你的A單位個管員", en: "Your A-unit case manager" },
       phone: tierA ? phoneDisplay(tierA.phone) : undefined,
       say: { zh, en },
       docs,

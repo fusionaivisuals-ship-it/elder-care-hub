@@ -11,8 +11,10 @@ curl -fsSL "https://ltcpap.mohw.gov.tw/publish/abc.csv" -o data/raw/abc.csv
 echo "2/3 Downloading New Taipei 社區照顧關懷據點 (community care centers)..."
 curl -fsSL "https://data.ntpc.gov.tw/api/datasets/abfde51a-e8c1-4b2b-bd8f-eeb548a793b7/json?page=0&size=1000" -o data/raw/ntpc_community_care.json
 
-echo "3/3 Rebuilding cleaned files..."
+echo "3/3 Rebuilding cleaned files + English names..."
 python3 -I scripts/build_providers.py data/raw/abc.csv data
 python3 -I scripts/build_app_data.py data
+# English names/addresses (needs: pip install pypinyin==0.53.0)
+python3 -I scripts/translate_names.py data
 
 echo "Done. Updated files in data/ — copy data/*.json into the app's public data folder if the app uses one."

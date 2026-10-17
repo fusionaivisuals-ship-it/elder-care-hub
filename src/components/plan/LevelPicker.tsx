@@ -1,9 +1,9 @@
-import { Accessibility, Bus, Check, Coffee, ExternalLink, HandHeart, Home, Info, X } from "lucide-react";
+import { Accessibility, AlarmClock, Bus, Check, Coffee, ExternalLink, HandHeart, Home, Info, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useLang } from "@/components/LanguageProvider";
-import { ntd } from "@/lib/i18n";
+import { ntd, pct } from "@/lib/i18n";
 import { careCap, levelGuide, type PlanResult } from "@/lib/planEngine";
-import type { Answers, Level, Rules } from "@/lib/types";
+import type { Answers, Level, LText, Rules } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const ALL_LEVELS: Level[] = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -32,7 +32,7 @@ export function LevelPicker({
   return (
     <section aria-labelledby="levels-h" className="print-card rounded-2xl bg-card p-4 shadow-soft sm:p-5">
       <h3 id="levels-h" className="text-lg">
-        {t("pickLevelTitle")}
+        {own ? t("pickLevelTitleAssessed") : t("pickLevelTitle")}
       </h3>
       <p className="mt-1 text-sm text-muted-foreground">{own ? t("pickLevelSubAssessed", { level: own }) : t("pickLevelSubNot")}</p>
 
@@ -81,7 +81,7 @@ export function LevelPicker({
       </div>
 
       <div className="mt-4" aria-live="polite">
-        {viewLevel ? <Guide answers={answers} plan={plan} rules={rules} level={viewLevel} own={own} /> : <p className="rounded-xl bg-muted/60 p-4 text-center text-muted-foreground">{t("guideEmpty")}</p>}
+        <Guide answers={answers} plan={plan} rules={rules} level={viewLevel} own={own} />
       </div>
 
       <details className="mt-4 rounded-xl border px-3 py-2">
@@ -104,75 +104,252 @@ export function LevelPicker({
   );
 }
 
-function Row({ icon, label, children, muted }: { icon: ReactNode; label: string; children: ReactNode; muted?: boolean }) {
+function Row({
+  icon,
+  label,
+  children,
+  muted,
+  highlight,
+  details,
+  notes,
+  sources,
+}: {
+  icon: ReactNode;
+  label: string;
+  children: ReactNode;
+  muted?: boolean;
+  highlight?: boolean;
+  details?: ReactNode;
+  notes?: (LText | undefined)[];
+  sources?: (string | undefined)[];
+}) {
+  const { t, tx } = useLang();
+  const list = (notes ?? []).filter(Boolean) as LText[];
+  const links = (sources ?? []).filter(Boolean) as string[];
   return (
     <li className={cn("flex items-start gap-3 py-3", muted && "opacity-70")}>
-      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-primary">{icon}</span>
+      <span className={cn("mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary", highlight ? "bg-accent/30" : "bg-secondary")}>{icon}</span>
       <div className="min-w-0 flex-1">
         <p className="font-semibold leading-snug">{label}</p>
         <div className="text-sm text-muted-foreground">{children}</div>
+        {details && <div className="mt-2 space-y-2 text-sm">{details}</div>}
+        {(list.length > 0 || links.length > 0) && (
+          <details className="mt-2 rounded-lg bg-card/70 px-3 py-1 text-sm">
+            <summary className="flex min-h-10 cursor-pointer list-none items-center gap-1.5 font-semibold text-primary">
+              <Info className="h-4 w-4" aria-hidden />
+              {t("detailsAndSources")}
+            </summary>
+            <ul className="list-disc space-y-1 pb-1 pl-5 text-muted-foreground">
+              {list.map((n, k) => (
+                <li key={k}>{tx(n)}</li>
+              ))}
+            </ul>
+            <div className="flex flex-wrap gap-x-4 pb-1">
+              {links.map((u, k) => (
+                <a key={u} href={u} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-1 text-primary underline underline-offset-2">
+                  {t("source")}
+                  {links.length > 1 ? ` ${k + 1}` : ""}
+                  <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                </a>
+              ))}
+            </div>
+          </details>
+        )}
       </div>
     </li>
   );
 }
 
-function Guide({ answers, plan, rules, level, own }: { answers: Answers; plan: PlanResult; rules: Rules; level: Level; own?: Level }) {
-  const { t } = useLang();
-  const g = levelGuide(rules, level, answers.household);
+/**
+ * What a level unlocks, with each benefit's details and official sources.
+ * For the plan's own level (assessed, or the one tapped), personal details are added:
+ * when unused care money resets, respite left and how far it goes, device money left.
+ */
+function Guide({ answers, plan, rules, level, own }: { answers: Answers; plan: PlanResult; rules: Rules; level?: Level; own?: Level }) {
+  const { t, tx } = useLang();
+  const g = level ? levelGuide(rules, level, answers.household) : undefined;
   const atHome = answers.living !== "residential";
-  const context = own ? (own === level ? t("guideYours") : t("guideCompare", { own, n: level })) : t("guideExample", { n: level });
+  const mine = !!level && plan.level === level; // personal numbers only apply to the plan's own level
+  const src = rules._sources;
+  const dh = rules.devices_home_modification;
+  const prior = (id: string) => dh.prior_use_rules.find((r) => r.id === id);
+  const sub = rules.residential.subsidy;
+  const context = !level ? undefined : own ? (own === level ? t("guideYours") : t("guideCompare", { own, n: level })) : t("guideExample", { n: level });
 
   return (
     <div className="animate-fade-in rounded-xl border-2 border-primary/20 bg-secondary/40 p-3 sm:p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-        <h4 className="text-lg text-primary">{t("guideTitle", { n: level })}</h4>
-        <span className="text-xs text-muted-foreground">{t("guideScale", { n: level })}</span>
-      </div>
-      {/* 8-segment meter */}
-      <div className="mt-2 grid grid-cols-8 gap-1" aria-hidden>
-        {ALL_LEVELS.map((lv) => (
-          <span key={lv} className={cn("h-2 rounded-full", lv <= level ? "bg-primary" : "bg-border")} />
-        ))}
-      </div>
-      <p className={cn("mt-2 text-sm font-semibold", own && own !== level ? "text-warning" : "text-foreground")}>{context}</p>
+      {level ? (
+        <>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+            <h4 className="text-lg text-primary">{t("guideTitle", { n: level })}</h4>
+            <span className="text-xs text-muted-foreground">{t("guideScale", { n: level })}</span>
+          </div>
+          {/* 8-segment meter */}
+          <div className="mt-2 grid grid-cols-8 gap-1" aria-hidden>
+            {ALL_LEVELS.map((lv) => (
+              <span key={lv} className={cn("h-2 rounded-full", lv <= level ? "bg-primary" : "bg-border")} />
+            ))}
+          </div>
+          <p className={cn("mt-2 text-sm font-semibold", own && own !== level ? "text-warning" : "text-foreground")}>{context}</p>
+        </>
+      ) : (
+        <p className="rounded-lg bg-card p-3 text-center text-muted-foreground">{t("guideEmpty")}</p>
+      )}
 
-      {!g.hasBenefits ? (
+      {atHome && !level && <p className="mt-3 text-sm font-semibold">{t("guideAnyLevel")}</p>}
+      {!atHome && <p className="mt-3 text-sm">{t("residentialNoHome")}</p>}
+
+      {g && !g.hasBenefits ? (
         <p className="mt-3 rounded-lg bg-card p-3">{t("guideLevel1")}</p>
       ) : (
         <ul className="mt-2 divide-y">
-          {atHome && g.care && (
-            <Row icon={<HandHeart className="h-4 w-4" aria-hidden />} label={t("cardCare")}>
+          {atHome && g?.care && (
+            <Row
+              icon={<HandHeart className="h-4 w-4" aria-hidden />}
+              label={t("cardCare")}
+              notes={[rules.quota_rules.carryover, rules.quota_rules.no_transfer, rules.quota_rules.over_cap, rules.professional_services]}
+              sources={[src.regulation_full_text_mirror, src.carryover_ruling, src.professional_page]}
+              details={
+                mine && plan.care?.period ? (
+                  <p className={cn("flex items-start gap-1.5", plan.care.period.daysLeft <= 31 ? "font-semibold text-destructive" : "text-muted-foreground")}>
+                    <AlarmClock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                    {t("periodEnds", { start: plan.care.period.start, end: plan.care.period.end, n: plan.care.period.daysLeft })}
+                  </p>
+                ) : undefined
+              }
+            >
               <span className="text-base font-semibold text-foreground">{ntd(g.care.cap)}</span>
-              {t("perMonth")} · {t("youPay")} <span className="font-semibold text-foreground">{ntd(g.care.youPay)}</span>
+              {t("perMonth")} · {t("govPays")} {ntd(g.care.govPays)} · {t("youPay")} <span className="font-semibold text-foreground">{ntd(g.care.youPay)}</span> ({pct(g.care.rate)})
             </Row>
           )}
-          {atHome && g.respite && (
-            <Row icon={<Coffee className="h-4 w-4" aria-hidden />} label={t("cardRespite")} muted={answers.living !== "home_family"}>
+          {atHome && g?.respite && (
+            <Row
+              icon={<Coffee className="h-4 w-4" aria-hidden />}
+              label={t("cardRespite")}
+              muted={answers.living !== "home_family"}
+              notes={[rules.respite.requires, rules.quota_rules.no_transfer]}
+              sources={[src.respite_page]}
+              details={
+                answers.living !== "home_family" ? (
+                  <p className="text-muted-foreground">{t("respiteNeedsCaregiver")}</p>
+                ) : mine && plan.respite ? (
+                  <div>
+                    {plan.respite.used > 0 && (
+                      <p className="text-muted-foreground">
+                        {t("devicesUsedLabel")} {ntd(plan.respite.used)} / {ntd(plan.respite.cap)}
+                      </p>
+                    )}
+                    <p className="font-semibold">
+                      {t("remaining")} {ntd(plan.respite.remaining)} · {t("youPay")} {ntd(plan.respite.youPay)}
+                    </p>
+                    <p className="mt-1 text-muted-foreground">{t("goesAsFar")}:</p>
+                    <ul className="mt-1 grid gap-1 sm:grid-cols-3">
+                      <li className="rounded-lg bg-card px-3 py-2">{t("daysResidential", { n: plan.respite.goesAsFar.residentialDays })}</li>
+                      <li className="rounded-lg bg-card px-3 py-2">{t("daysDaycare", { n: plan.respite.goesAsFar.daycareDays })}</li>
+                      <li className="rounded-lg bg-card px-3 py-2">{t("visitsHome", { n: plan.respite.goesAsFar.homeVisits2h })}</li>
+                    </ul>
+                  </div>
+                ) : undefined
+              }
+            >
               <span className="text-base font-semibold text-foreground">{ntd(g.respite.cap)}</span>
-              {t("perYear")} · {t("youPay")} {ntd(g.respite.youPay)}
-              {answers.living !== "home_family" && <span className="block">{t("respiteNeedsCaregiver")}</span>}
+              {t("perYear")} · {t("youPay")} {ntd(g.respite.youPay)} ({pct(g.respite.rate)})
             </Row>
           )}
           {atHome && plan.transport && (
-            <Row icon={<Bus className="h-4 w-4" aria-hidden />} label={t("cardTransport")}>
-              {ntd(plan.transport.cap)}
-              {t("perMonth")} · {t("sameAllLevels")}
+            <Row
+              icon={<Bus className="h-4 w-4" aria-hidden />}
+              label={t("cardTransport")}
+              highlight={plan.transport.highlight}
+              notes={[rules.transport.medical_DA01, rules.quota_rules.carryover, rules.transport.community_BD03]}
+              sources={[src.transport_page]}
+            >
+              <span className="text-base font-semibold text-foreground">{ntd(plan.transport.cap)}</span>
+              {t("perMonth")} · {t("youPay")} {ntd(plan.transport.youPay)} ({pct(plan.transport.rate)}) · {t("sameAllLevels")}
             </Row>
           )}
           {atHome && plan.devices && (
-            <Row icon={<Accessibility className="h-4 w-4" aria-hidden />} label={t("cardDevices")}>
-              {ntd(plan.devices.group1.cap)} / {ntd(plan.devices.group2.cap)} · {t("cardDevicesSub")} · {t("sameAllLevels")}
+            <Row
+              icon={<Accessibility className="h-4 w-4" aria-hidden />}
+              label={t("cardDevices")}
+              highlight={plan.devices.highlight}
+              notes={[
+                dh.cycle,
+                plan.devices.mode === "group1_only" ? prior("group1_before_20260701") : undefined,
+                prior("remaining"),
+                prior("used_up_early"),
+                plan.devices.showDisabilityOverlap ? prior("min_service_life") : undefined,
+                plan.devices.showDisabilityOverlap ? prior("disability_overlap") : undefined,
+                dh.process,
+              ]}
+              sources={[src.devices_page, src.devices_qa_20260701]}
+              details={
+                plan.devices.mode === "group1_only" ? (
+                  <div className="space-y-1">
+                    <p className="font-semibold">
+                      {t("group1")} · {t("devicesRemaining", { left: ntd(plan.devices.group1.remaining), cap: ntd(plan.devices.group1.cap), end: plan.devices.periodEnd! })}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {t("devicesUsedLabel")} {ntd(plan.devices.used)} · {t("ifAllUsed")}: {t("youPay")} {ntd(plan.devices.group1.youPayIfAllUsed)}
+                    </p>
+                    <p className="rounded-lg bg-card p-2">{t("group2From", { cap: ntd(plan.devices.group2.cap), date: plan.devices.group2From! })}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <p className="text-muted-foreground">{t(plan.devices.mode === "choose" ? "devicesChoose" : "devicesCompare")}</p>
+                    {(["group1", "group2"] as const).map((k) => {
+                      const pot = plan.devices![k];
+                      return (
+                        <p key={k} className="rounded-lg bg-card p-2">
+                          <span className="font-semibold">
+                            {t(k)} · {ntd(pot.cap)}
+                          </span>{" "}
+                          — {k === "group1" ? t("group1Desc") : t("group2Desc", { max: ntd(plan.devices!.group2.homeModMax) })}
+                          {plan.devices!.mode === "compare" && ` · ${t("remaining")} ${ntd(pot.remaining)}`}
+                          {` · ${t("ifAllUsed")}: ${t("youPay")} ${ntd(pot.youPayIfAllUsed)}`}
+                        </p>
+                      );
+                    })}
+                  </div>
+                )
+              }
+            >
+              {t("youPayOfUse", { pct: pct(plan.devices.rate) })} · {t("cardDevicesSub")} · {t("sameAllLevels")}
             </Row>
           )}
-          <Row icon={<Home className="h-4 w-4" aria-hidden />} label={t("cardResidential")}>
-            <span className={cn("inline-flex items-center gap-1", g.residentialEligible ? "text-success" : "")}>
-              {g.residentialEligible ? <Check className="h-4 w-4" aria-hidden /> : <X className="h-4 w-4" aria-hidden />}
-              {g.residentialEligible ? t("residentialYes") : t("residentialNo")}
-            </span>
-          </Row>
+          {(g || !atHome) && (
+            <Row
+              icon={<Home className="h-4 w-4" aria-hidden />}
+              label={t("cardResidential")}
+              notes={[sub.eligible, sub.month_counting, sub.how_to_apply, sub.not_eligible_facilities]}
+              sources={[src.residential_subsidy_page, src.residential_subsidy_qa]}
+              details={
+                mine && plan.residential?.cannotCombine ? (
+                  <p className="rounded-lg bg-accent/15 p-2 text-foreground">
+                    <span className="font-semibold">{t("cannotCombine")}: </span>
+                    {tx(sub.no_double)}
+                  </p>
+                ) : undefined
+              }
+            >
+              <ResidentialStatus status={(mine || !g) && plan.residential ? plan.residential.status : g?.residentialEligible ? "eligible_15000" : "needs_level4"} />
+            </Row>
+          )}
         </ul>
       )}
     </div>
+  );
+}
+
+function ResidentialStatus({ status }: { status: "eligible_15000" | "eligible_5000" | "needs_level4" | "not_eligible" }) {
+  const { t } = useLang();
+  const ok = status === "eligible_15000" || status === "eligible_5000";
+  const text = { eligible_15000: t("residentialYes"), eligible_5000: t("resEligible5000"), needs_level4: t("residentialNo"), not_eligible: t("resNotEligible") }[status];
+  return (
+    <span className={cn("inline-flex items-start gap-1", ok && "text-success")}>
+      {ok ? <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> : <X className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />}
+      {text}
+    </span>
   );
 }
 

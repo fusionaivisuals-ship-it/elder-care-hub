@@ -46,7 +46,10 @@
      - copay rates for this household (care/respite, devices, transport) with the income-band estimate note;
      - the **level picker**: a 1–8 scale, mild → severe, showing each level's monthly care cap. Not assessed: nothing is pre-selected and a tapped level is labelled "example, not a prediction". Assessed: their level is pre-selected and badged "你的等級", and other levels are comparison only (the details stay on their level);
      - the **level guide** for the chosen level: what that level unlocks (care, respite, transport and devices the same at every level, residential subsidy at level 4+), plus "等級怎麼決定？" (official MOHW definition and reassessment rule) and a comparison table of all levels;
-     - then the benefit details cards, the tax deduction, and providers near you.
+     - the separate benefit cards are gone: each row of the level guide has "細節與官方來源 Details & official sources" (rule notes + source links), and personal details for the plan's own level (reset date, respite left and how far it goes, device money left). Then the tax deduction.
+   - **Part 3, "附近服務 Nearby services":** a map explorer with three tabs (subsidized / community / self-pay), each with a map, a list, Call, Google Maps and Apple Maps directions, and "show on map". New Taipei community care centers have no coordinates in the source, so they're listed (directions by address) but not mapped.
+   - **Session memory:** language in localStorage; answers, wizard step, chosen level and map location in sessionStorage (survives refresh, cleared when the tab closes). The footer has "清除我的回答 Clear my answers".
+   - **English names:** `scripts/translate_names.py` adds `name_en` / `address_en` (glossary + Hanyu Pinyin, official English names for big hospitals). Labelled as automatic, with the Chinese shown underneath.
    - **No mild/moderate/severe labels:** levels are never given these labels, because no official mapping exists.
    - **Original screen spec below.**
    - **Eligibility banner:** exact wording from the rules file.

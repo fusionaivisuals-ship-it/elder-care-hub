@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
-import { AlertCircle, Loader2, MapPin } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { AlertCircle, Loader2, MapPin, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLang } from "@/components/LanguageProvider";
+import { usePlan } from "@/context/PlanContext";
 import { cn } from "@/lib/utils";
 
 export function TopBar() {
@@ -30,11 +31,28 @@ export function TopBar() {
 
 export function Footer() {
   const { t } = useLang();
+  const { answers, draft, reset } = usePlan();
+  const navigate = useNavigate();
+  const hasData = !!answers || Object.keys(draft).some((k) => k !== "needs") || (draft.needs?.length ?? 0) > 0;
   return (
     <footer className="mt-12 border-t bg-card">
       <div className="mx-auto max-w-[720px] space-y-2 px-4 py-6 text-sm text-muted-foreground">
         <p>{t("footer")}</p>
         <p>{t("footerPrivacy")}</p>
+        {hasData && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="no-print mt-1 min-h-12"
+            onClick={() => {
+              reset();
+              navigate("/");
+            }}
+          >
+            <Trash2 className="mr-1.5 h-4 w-4" aria-hidden />
+            {t("clearAnswers")}
+          </Button>
+        )}
       </div>
     </footer>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -92,12 +92,13 @@ function ToggleRow({ id, label, checked, onChange }: { id: string; label: string
 const Start = () => {
   const { t, lang } = useLang();
   const navigate = useNavigate();
-  const { draft: d, setDraft, setAnswers, setSelectedLevel, setDemo } = usePlan();
+  const { draft: d, setDraft, setAnswers, setSelectedLevel, setDemo, setWizardStep } = usePlan();
   // districts + rules (income bands) are both needed by the wizard
   const data = useData(() => Promise.all([loadDistricts(), loadRules()]), []);
   const districts = { ...data, data: data.data?.[0] };
   const rules = data.data?.[1];
-  const [i, setI] = useState(0);
+  // the current step is saved with the answers, so a refresh returns to the same question
+  const { wizardStep: i, setWizardStep: setI } = usePlan();
   useDocumentTitle(t("start"));
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -151,6 +152,7 @@ const Start = () => {
     setAnswers(a);
     setSelectedLevel(undefined);
     setDemo(null);
+    setWizardStep(0);
     navigate("/plan");
   };
 

@@ -3,7 +3,8 @@ import { Check, Copy, ExternalLink, MapPin, Phone, Stethoscope } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { useLang } from "@/components/LanguageProvider";
 import type { CallScript } from "@/lib/callScript";
-import { mapsSearchUrl, phoneDisplay, phoneHref } from "@/lib/data";
+import { addressFor, nameFor, phoneDisplay, phoneHref } from "@/lib/data";
+import { NavButtons } from "@/components/explorer/ProviderExplorer";
 import type { PlanResult } from "@/lib/planEngine";
 import { cityName } from "@/lib/places";
 import type { Answers, Provider, Rules } from "@/lib/types";
@@ -67,12 +68,17 @@ export function CallFirst({ answers, plan, rules, tierA, script }: { answers: An
         (tierA ? (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">{t("nearestA")}</p>
-            <p className="text-lg font-semibold">{tierA.name}</p>
-            <a href={mapsSearchUrl(tierA.address)} target="_blank" rel="noreferrer" className="flex min-h-10 items-start gap-1.5 text-muted-foreground underline-offset-2 hover:underline">
+            <p className="text-lg font-semibold leading-snug">{nameFor(tierA, lang)}</p>
+            {lang === "en" && tierA.name_en && <p className="text-sm text-muted-foreground">{tierA.name}</p>}
+            <p className="flex items-start gap-1.5 text-muted-foreground">
               <MapPin className="mt-1 h-4 w-4 shrink-0" aria-hidden />
-              {tierA.address}
-            </a>
+              <span>
+                {addressFor(tierA, lang)}
+                {lang === "en" && tierA.address_en && <span className="block text-sm">{tierA.address}</span>}
+              </span>
+            </p>
             <CallButton phone={tierA.phone} />
+            <NavButtons place={{ ...tierA, phone: undefined }} />
             <p className="text-sm text-muted-foreground">{t("nearestASub")}</p>
           </div>
         ) : (

@@ -92,6 +92,9 @@ export interface Provider {
   ownership: Ownership;
   contract_end: string;
   last_updated: string;
+  /** Automatic English translation (scripts/translate_names.py); Chinese stays the reference. */
+  name_en?: string;
+  address_en?: string;
 }
 
 export interface District {
@@ -112,6 +115,8 @@ export interface CommunityPoint {
   address: string;
   type: string;
   source: string;
+  name_en?: string;
+  address_en?: string;
 }
 
 type CopayRates = Record<CopayType, number>;

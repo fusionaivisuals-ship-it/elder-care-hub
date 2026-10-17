@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
 import { ArrowRight, Check, HandHeart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -29,7 +28,21 @@ function Step({ n, title, last, children }: { n: number; title: string; last?: b
 }
 
 /** Part 1: who to call, what to have ready, what happens next — in that order. */
-export function ActionPlan({ answers, plan, rules, tierA, script }: { answers: Answers; plan: PlanResult; rules: Rules; tierA?: Provider; script: CallScript }) {
+export function ActionPlan({
+  answers,
+  plan,
+  rules,
+  tierA,
+  script,
+  onOpenCommunity,
+}: {
+  answers: Answers;
+  plan: PlanResult;
+  rules: Rules;
+  tierA?: Provider;
+  script: CallScript;
+  onOpenCommunity: () => void;
+}) {
   const { t, tx, lang } = useLang();
   const docs = script.docs[lang];
   const [ready, setReady] = useState<Set<number>>(new Set());
@@ -46,7 +59,7 @@ export function ActionPlan({ answers, plan, rules, tierA, script }: { answers: A
           <CallFirst answers={answers} plan={plan} rules={rules} tierA={tierA} script={script} />
         </Step>
 
-        <Step n={2} title={t("step2Title")}>
+        <Step n={2} title={plan.assessed && plan.showBenefits ? t("step2TitleAssessed") : t("step2Title")}>
           <div className="space-y-4">
             <div className="print-card rounded-2xl bg-card p-4 shadow-soft">
               <div className="mb-2 flex items-baseline justify-between gap-2">
@@ -118,11 +131,9 @@ export function ActionPlan({ answers, plan, rules, tierA, script }: { answers: A
           ) : (
             <Callout tone="success" icon={<HandHeart className="h-6 w-6" />} title={t("communityFirstCard")}>
               <p>{tx(rules.eligibility.if_not_eligible)}</p>
-              <Button asChild className="no-print mt-3 min-h-12">
-                <Link to="/map?tab=community">
-                  {t("tabCommunity")}
-                  <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
-                </Link>
+              <Button className="no-print mt-3 min-h-12" onClick={onOpenCommunity}>
+                {t("tabCommunity")}
+                <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
               </Button>
             </Callout>
           )}

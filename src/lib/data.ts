@@ -133,3 +133,22 @@ export function phoneHref(raw: string): string {
 export function mapsSearchUrl(q: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 }
+
+/** Turn-by-turn directions. Exact coordinates when we have them, otherwise the (Chinese) address. */
+export function directionsUrls(place: { address: string; name: string; lat?: number | null; lng?: number | null }): { google: string; apple: string } {
+  const hasXY = place.lat != null && place.lng != null;
+  const dest = hasXY ? `${place.lat},${place.lng}` : place.address || place.name;
+  return {
+    google: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`,
+    apple: `https://maps.apple.com/?daddr=${encodeURIComponent(dest)}&q=${encodeURIComponent(place.name)}`,
+  };
+}
+
+/** Name / address in the reader's language; Chinese is the fallback and the reference. */
+export function nameFor(x: { name: string; name_en?: string }, lang: "zh" | "en"): string {
+  return lang === "en" && x.name_en ? x.name_en : x.name;
+}
+
+export function addressFor(x: { address: string; address_en?: string }, lang: "zh" | "en"): string {
+  return lang === "en" && x.address_en ? x.address_en : x.address;
+}

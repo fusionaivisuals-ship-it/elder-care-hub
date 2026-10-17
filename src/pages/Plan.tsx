@@ -1,16 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
-  Accessibility,
   AlarmClock,
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
-  Bus,
   ClipboardList,
   Coffee,
-  HandHeart,
-  Home,
   Hospital,
   Info,
   MapPinned,
@@ -22,21 +18,19 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLang } from "@/components/LanguageProvider";
-import { LoadState, Page, Section, TierBadge } from "@/components/Shell";
+import { LoadState, Page, Section } from "@/components/Shell";
 import { ActionPlan } from "@/components/plan/ActionPlan";
-import { CallButton } from "@/components/plan/CallFirst";
+
 import { LevelPicker } from "@/components/plan/LevelPicker";
-import { BenefitCard, Callout, MoneySplit } from "@/components/plan/PlanParts";
+import { ProviderExplorer, useExplorerLocation } from "@/components/explorer/ProviderExplorer";
+import { Callout } from "@/components/plan/PlanParts";
 import { usePlan } from "@/context/PlanContext";
 import { useData } from "@/hooks/useData";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { buildCallScript } from "@/lib/callScript";
 import {
   cityKeyOf,
-  distanceFrom,
-  districtCentroid,
   findDistrict,
-  getProvidersFor,
   loadCommunity,
   loadDemoCases,
   loadDistricts,
@@ -45,10 +39,10 @@ import {
   nearestTierA,
   providersServing,
 } from "@/lib/data";
-import { CATEGORY_LABELS, ntd, ntdRange, pct, TIER_LABELS } from "@/lib/i18n";
+import { ntd, ntdRange, pct } from "@/lib/i18n";
 import { districtName, placeName } from "@/lib/places";
 import { computePlan, incomeBandRanges, rate, type PlanResult } from "@/lib/planEngine";
-import type { Answers, CommunityPoint, District, Level, Provider, Rules } from "@/lib/types";
+import type { Answers, CommunityPoint, Level, Provider, Rules } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const Plan = () => {
@@ -100,10 +94,12 @@ const Plan = () => {
   return <PlanView answers={answers} demo={demo} onSwitchDemo={(n) => setParams({ demo: String(n) })} />;
 };
 
+type Part = 1 | 2 | 3;
+
 function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 | 2 | null; onSwitchDemo: (n: 1 | 2) => void }) {
   const { t, lang } = useLang();
   const [params, setParams] = useSearchParams();
-  const { selectedLevel, setSelectedLevel, setDraft } = usePlan();
+  const { selectedLevel, setSelectedLevel, setDraft, setWizardStep } = usePlan();
   // Assessed parents: their level is fixed; the picker only previews other levels for comparison
   const [compareLevel, setCompareLevel] = useState<Level | undefined>();
   const cityKey = cityKeyOf(answers.city);
@@ -130,12 +126,15 @@ function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 |
   }
   const { rules, districts, providers, plan, tierA, script } = computed;
   const place = placeName(answers.city, answers.district, lang);
-  const hasParts = plan.showBenefits;
-  const part = hasParts && params.get("part") === "2" ? 2 : 1;
-  const goPart = (p: 1 | 2) => {
+  // ① call & prepare · ② benefit estimate (only when there are benefits to estimate) · ③ nearby services
+  const parts: Part[] = plan.showBenefits ? [1, 2, 3] : [1, 3];
+  const wanted = Number(params.get("part")) as Part;
+  const part: Part = parts.includes(wanted) ? wanted : 1;
+  const goPart = (p: Part, tab?: string) => {
     const next = new URLSearchParams(params);
-    if (p === 2) next.set("part", "2");
-    else next.delete("part");
+    if (p === 1) next.delete("part");
+    else next.set("part", String(p));
+    if (tab) next.set("tab", tab);
     setParams(next);
     // land at the start of the chosen part (just under the sticky top bar), not at the top of the page
     requestAnimationFrame(() => {
@@ -170,7 +169,13 @@ function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 |
           <p className="text-muted-foreground">{t("planFor", { place })}</p>
         </div>
         <Button asChild variant="ghost" size="sm" className="no-print min-h-12 shrink-0">
-          <Link to="/start" onClick={() => setDraft({ ...answers })}>
+          <Link
+            to="/start"
+            onClick={() => {
+              setDraft({ ...answers });
+              setWizardStep(0);
+            }}
+          >
             <Pencil className="mr-1 h-4 w-4" aria-hidden />
             {t("editAnswers")}
           </Link>
@@ -185,10 +190,9 @@ function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 |
 
       <AlertsRow plan={plan} />
 
-      {hasParts && (
-        <nav id="plan-parts" aria-label={t("partsLabel")} className="no-print sticky top-14 z-10 -mx-4 mt-6 bg-background/95 px-4 py-2 backdrop-blur-sm">
-          <div role="tablist" className="grid grid-cols-2 gap-2 rounded-2xl bg-muted p-1">
-            {([1, 2] as const).map((p) => (
+      <nav id="plan-parts" aria-label={t("partsLabel")} className="no-print sticky top-14 z-10 -mx-4 mt-6 bg-background/95 px-4 py-2 backdrop-blur-sm">
+          <div role="tablist" className={cn("grid gap-1 rounded-2xl bg-muted p-1", parts.length === 3 ? "grid-cols-3" : "grid-cols-2")}>
+            {parts.map((p) => (
               <button
                 key={p}
                 type="button"
@@ -198,44 +202,39 @@ function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 |
                 aria-controls={`part-${p}`}
                 onClick={() => goPart(p)}
                 className={cn(
-                  "flex min-h-12 items-center justify-center gap-2 rounded-xl px-2 text-sm font-semibold transition-colors duration-150 sm:text-base",
+                  "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-center text-xs font-semibold leading-tight transition-colors duration-150 sm:min-h-12 sm:flex-row sm:gap-2 sm:text-base",
                   part === p ? "bg-card text-primary shadow-soft" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs", part === p ? "bg-primary text-primary-foreground" : "bg-border text-foreground")}>{p}</span>
-                {t(p === 1 ? "part1Tab" : "part2Tab")}
+                {t(p === 1 ? "part1Tab" : p === 2 ? "part2Tab" : "part3Tab")}
               </button>
             ))}
           </div>
         </nav>
-      )}
 
-      {/* Both parts stay in the DOM so the printed plan contains everything */}
-      <div id="part-1" role={hasParts ? "tabpanel" : undefined} aria-labelledby={hasParts ? "part-tab-1" : undefined} className={cn("mt-6", part !== 1 && "hidden print:block")}>
-        <ActionPlan answers={answers} plan={plan} rules={rules} tierA={tierA} script={script} />
+      {/* Parts 1 and 2 stay in the DOM so the printed plan contains both; part 3 (maps) is screen-only */}
+      <div id="part-1" role="tabpanel" aria-labelledby="part-tab-1" className={cn("mt-6", part !== 1 && "hidden print:block")}>
+        <ActionPlan answers={answers} plan={plan} rules={rules} tierA={tierA} script={script} onOpenCommunity={() => goPart(3, "community")} />
         <Hotlines rules={rules} />
-        {hasParts && (
-          <button
-            type="button"
-            onClick={() => goPart(2)}
-            className="no-print mt-8 flex min-h-16 w-full items-center justify-between gap-3 rounded-2xl bg-primary px-5 py-3 text-left text-primary-foreground shadow-soft transition-opacity duration-150 hover:opacity-95"
-          >
-            <span>
-              <span className="block text-lg font-semibold">{t("toPart2")}</span>
-              <span className="block text-sm opacity-90">{t("toPart2Sub")}</span>
-            </span>
-            <ArrowRight className="h-6 w-6 shrink-0" aria-hidden />
-          </button>
-        )}
+        {plan.showBenefits ? <NextPart onClick={() => goPart(2)} title={t("toPart2")} sub={t("toPart2Sub")} /> : <NextPart onClick={() => goPart(3)} title={t("toPart3")} sub={t("toPart3Sub")} />}
       </div>
 
-      {hasParts && (
+      {plan.showBenefits && (
         <div id="part-2" role="tabpanel" aria-labelledby="part-tab-2" className={cn("mt-6", part !== 2 && "hidden print:block")}>
           <BenefitEstimate answers={answers} plan={plan} rules={rules} viewLevel={viewLevel} onChoose={chooseLevel} />
-          <Button variant="ghost" className="no-print mt-6 min-h-12" onClick={() => goPart(1)}>
+          <NextPart onClick={() => goPart(3)} title={t("toPart3")} sub={t("toPart3Sub")} />
+          <Button variant="ghost" className="no-print mt-4 min-h-12" onClick={() => goPart(1)}>
             <ArrowLeft className="mr-1 h-4 w-4" aria-hidden />
             {t("toPart1")}
           </Button>
+        </div>
+      )}
+
+      {/* Mounted only while visible: Leaflet can't size a map inside a hidden element */}
+      {part === 3 && (
+        <div id="part-3" role="tabpanel" aria-labelledby="part-tab-3" className="no-print mt-6">
+          <NearbyServices answers={answers} providers={providers} community={community.data ?? []} />
         </div>
       )}
 
@@ -247,7 +246,6 @@ function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 |
         <p className="text-sm text-muted-foreground">{t("printHint")}</p>
       </div>
 
-      <ProvidersSummary answers={answers} plan={plan} providers={providers} districts={districts} community={community.data ?? []} />
     </Page>
   );
 }
@@ -346,13 +344,6 @@ function BenefitEstimate({ answers, plan, rules, viewLevel, onChoose }: { answer
 
       <LevelPicker answers={answers} plan={plan} rules={rules} viewLevel={viewLevel} onChoose={onChoose} />
 
-      <section aria-labelledby="details-h">
-        <h3 id="details-h" className="text-xl">
-          {plan.level ? t("detailsTitleLevel", { n: plan.level }) : t("detailsTitleNoLevel")}
-        </h3>
-        {!plan.level && answers.living !== "residential" && <p className="mt-1 text-sm text-muted-foreground">{t("detailsNoLevelHint")}</p>}
-        <BenefitCards answers={answers} plan={plan} rules={rules} />
-      </section>
 
       <div className="print-card rounded-2xl bg-card p-4 shadow-soft">
         <p className="mb-1 flex items-center gap-1.5 font-semibold">
@@ -368,229 +359,46 @@ function BenefitEstimate({ answers, plan, rules, viewLevel, onChoose }: { answer
   );
 }
 
-
-function BenefitCards({ answers, plan, rules }: { answers: Answers; plan: PlanResult; rules: Rules }) {
-  const { t, tx } = useLang();
-  const src = rules._sources;
-  const dh = rules.devices_home_modification;
-  const priorRule = (id: string) => dh.prior_use_rules.find((r) => r.id === id);
-  const sub = rules.residential.subsidy;
-
+function NextPart({ onClick, title, sub }: { onClick: () => void; title: string; sub: string }) {
   return (
-    <div className="mt-6 space-y-4">
-      {answers.living === "residential" && <Callout tone="info" icon={<Home className="h-6 w-6" />} title={t("residentialNoHome")} />}
-
-      {plan.care && (
-        <BenefitCard
-          icon={<HandHeart className="h-5 w-5" aria-hidden />}
-          title={t("cardCare")}
-          subtitle={t("cardCareSub")}
-          notes={[rules.quota_rules.carryover, rules.quota_rules.no_transfer, rules.quota_rules.over_cap, rules.professional_services]}
-          sources={[src.regulation_full_text_mirror, src.carryover_ruling, src.professional_page]}
-        >
-          <MoneySplit govPays={plan.care.govPays} youPay={plan.care.youPay} rate={plan.care.rate} unit={t("perMonth")} />
-          {plan.care.period && (
-            <p className={cn("mt-3 flex items-start gap-1.5 text-sm", plan.care.period.daysLeft <= 31 ? "font-semibold text-destructive" : "text-muted-foreground")}>
-              <AlarmClock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-              {t("periodEnds", { start: plan.care.period.start, end: plan.care.period.end, n: plan.care.period.daysLeft })}
-            </p>
-          )}
-        </BenefitCard>
-      )}
-
-      {plan.transport && (
-        <BenefitCard
-          icon={<Bus className="h-5 w-5" aria-hidden />}
-          title={t("cardTransport")}
-          subtitle={t("cardTransportSub")}
-          highlight={plan.transport.highlight}
-          notes={[rules.transport.medical_DA01, rules.quota_rules.carryover, rules.transport.community_BD03]}
-          sources={[src.transport_page]}
-        >
-          <MoneySplit govPays={plan.transport.govPays} youPay={plan.transport.youPay} rate={plan.transport.rate} unit={t("perMonth")} />
-        </BenefitCard>
-      )}
-
-      {plan.devices && (
-        <BenefitCard
-          icon={<Accessibility className="h-5 w-5" aria-hidden />}
-          title={t("cardDevices")}
-          subtitle={`${t("cardDevicesSub")} · ${t("youPayOfUse", { pct: pct(plan.devices.rate) })}`}
-          highlight={plan.devices.highlight}
-          notes={[
-            dh.cycle,
-            plan.devices.mode === "group1_only" ? priorRule("group1_before_20260701") : undefined,
-            priorRule("remaining"),
-            priorRule("used_up_early"),
-            plan.devices.showDisabilityOverlap ? priorRule("min_service_life") : undefined,
-            plan.devices.showDisabilityOverlap ? priorRule("disability_overlap") : undefined,
-            dh.process,
-          ]}
-          sources={[src.devices_page, src.devices_qa_20260701]}
-        >
-          {plan.devices.mode === "group1_only" ? (
-            <div className="space-y-3">
-              <p className="font-semibold">
-                {t("group1")} · {t("devicesRemaining", { left: ntd(plan.devices.group1.remaining), cap: ntd(plan.devices.group1.cap), end: plan.devices.periodEnd! })}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {t("devicesUsedLabel")} {ntd(plan.devices.used)} · {t("ifAllUsed")}:
-              </p>
-              <MoneySplit govPays={plan.devices.group1.govPaysIfAllUsed} youPay={plan.devices.group1.youPayIfAllUsed} rate={plan.devices.rate} />
-              <p className="rounded-xl bg-secondary p-3 text-sm text-secondary-foreground">{t("group2From", { cap: ntd(plan.devices.group2.cap), date: plan.devices.group2From! })}</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">{t(plan.devices.mode === "choose" ? "devicesChoose" : "devicesCompare")}</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {(["group1", "group2"] as const).map((g) => {
-                  const pot = plan.devices![g];
-                  return (
-                    <div key={g} className="rounded-xl border p-3">
-                      <p className="font-semibold">
-                        {t(g)} · {ntd(pot.cap)}
-                      </p>
-                      <p className="mb-2 text-sm text-muted-foreground">{g === "group1" ? t("group1Desc") : t("group2Desc", { max: ntd(plan.devices!.group2.homeModMax) })}</p>
-                      {plan.devices!.mode === "compare" && (
-                        <p className="mb-2 text-sm">
-                          {t("remaining")} {ntd(pot.remaining)}
-                        </p>
-                      )}
-                      <p className="text-sm">
-                        {t("ifAllUsed")}: {t("govPays")} {ntd(pot.govPaysIfAllUsed)} · {t("youPay")} {ntd(pot.youPayIfAllUsed)}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </BenefitCard>
-      )}
-
-      {plan.respiteNeedsCaregiver && answers.living === "home_none" && <Callout tone="warning" icon={<Coffee className="h-6 w-6" />} title={t("respiteNeedsCaregiver")} />}
-
-      {(plan.respite || plan.respiteTable) && (
-        <BenefitCard
-          icon={<Coffee className="h-5 w-5" aria-hidden />}
-          title={t("cardRespite")}
-          subtitle={t("cardRespiteSub")}
-          notes={[rules.respite.requires, rules.quota_rules.no_transfer]}
-          sources={[src.respite_page]}
-        >
-          {plan.respite ? (
-            <div className="space-y-3">
-              {plan.respite.used > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {t("devicesUsedLabel")} {ntd(plan.respite.used)} / {ntd(plan.respite.cap)}
-                </p>
-              )}
-              <p className="font-semibold">
-                {t("remaining")} {ntd(plan.respite.remaining)}
-                {t("perYear")}
-              </p>
-              <MoneySplit govPays={plan.respite.govPays} youPay={plan.respite.youPay} rate={plan.respite.rate} />
-              <div>
-                <p className="text-sm font-semibold">{t("goesAsFar")}</p>
-                <ul className="mt-1 grid gap-1 text-sm sm:grid-cols-3">
-                  <li className="rounded-lg bg-muted/60 px-3 py-2">{t("daysResidential", { n: plan.respite.goesAsFar.residentialDays })}</li>
-                  <li className="rounded-lg bg-muted/60 px-3 py-2">{t("daysDaycare", { n: plan.respite.goesAsFar.daycareDays })}</li>
-                  <li className="rounded-lg bg-muted/60 px-3 py-2">{t("visitsHome", { n: plan.respite.goesAsFar.homeVisits2h })}</li>
-                </ul>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {plan.respiteTable!.rows.map((r) => (
-                <div key={r.levels} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm">
-                  <span className="font-semibold">
-                    {t("respiteLevels", { levels: r.levels })} · {ntd(r.cap)}
-                    {t("perYear")}
-                  </span>
-                  <span>
-                    {t("govPays")} {ntd(r.govPays)} · {t("youPay")} {ntd(r.youPay)} ({pct(plan.respiteTable!.rate)})
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </BenefitCard>
-      )}
-
-      {plan.residential && (
-        <BenefitCard
-          icon={<Home className="h-5 w-5" aria-hidden />}
-          title={t("cardResidential")}
-          subtitle={answers.living === "residential" ? t("cardResidentialSub") : t("resOption")}
-          notes={[sub.eligible, sub.month_counting, sub.how_to_apply, sub.not_eligible_facilities]}
-          sources={[src.residential_subsidy_page, src.residential_subsidy_qa]}
-        >
-          <p className={cn("font-semibold", plan.residential.monthly ? "text-primary" : "text-muted-foreground")}>
-            {plan.residential.status === "eligible_15000"
-              ? t("resEligible15000")
-              : plan.residential.status === "eligible_5000"
-                ? t("resEligible5000")
-                : plan.residential.status === "needs_level4"
-                  ? t("resNeedsLevel")
-                  : t("resNotEligible")}
-          </p>
-          {plan.residential.cannotCombine && (
-            <div className="mt-3">
-              <Callout tone="warning" icon={<TriangleAlert className="h-5 w-5" />} title={t("cannotCombine")}>
-                {tx(sub.no_double)}
-              </Callout>
-            </div>
-          )}
-        </BenefitCard>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className="no-print mt-8 flex min-h-16 w-full items-center justify-between gap-3 rounded-2xl bg-primary px-5 py-3 text-left text-primary-foreground shadow-soft transition-opacity duration-150 hover:opacity-95"
+    >
+      <span>
+        <span className="block text-lg font-semibold">{title}</span>
+        <span className="block text-sm opacity-90">{sub}</span>
+      </span>
+      <ArrowRight className="h-6 w-6 shrink-0" aria-hidden />
+    </button>
   );
 }
 
-function ProvidersSummary({ answers, plan, providers, districts, community }: { answers: Answers; plan: PlanResult; providers: Provider[]; districts: District[]; community: CommunityPoint[] }) {
+/** Part 3: what's around the family, then the map explorer (subsidized / community / self-pay). */
+function NearbyServices({ answers, providers, community }: { answers: Answers; providers: Provider[]; community: CommunityPoint[] }) {
   const { t, lang } = useLang();
+  const [loc, setLoc] = useExplorerLocation(answers);
   const serving = providersServing(providers, answers.district);
   const homes = providers.filter((p) => p.is_residential && p.district === answers.district);
   const openBeds = homes.reduce((s, p) => s + p.open_beds, 0);
   const communityCount = community.filter((c) => c.district === answers.district).length + providers.filter((p) => p.tier === "C" && p.district === answers.district).length;
-  const c = districtCentroid(districts, answers.city, answers.district);
-  const top = getProvidersFor(providers, districts, answers, plan.level).slice(0, 3);
-  const mapLink = plan.communityFirst && !plan.showBenefits ? "/map?tab=community" : "/map";
 
   return (
-    <Section title={t("afterCallTitle")} icon={<MapPinned className="h-5 w-5 text-primary" aria-hidden />} className="no-print">
+    <div className="space-y-4">
+      <p className="text-muted-foreground">{t("part3Intro")}</p>
       <div className="rounded-2xl bg-card p-4 shadow-soft">
-        <p className="text-lg font-semibold">{t("afterCallSub", { n: serving.length.toLocaleString("en-US"), district: districtName(answers.district, lang) })}</p>
-        <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+        <p className="flex items-start gap-2 text-lg font-semibold">
+          <MapPinned className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden />
+          {t("afterCallSub", { n: serving.length.toLocaleString("en-US"), district: districtName(answers.district, lang) })}
+        </p>
+        <ul className="mt-1 space-y-0.5 pl-7 text-sm text-muted-foreground">
           {homes.length > 0 && <li>{t("homesOpen", { homes: homes.length, beds: openBeds })}</li>}
           {communityCount > 0 && <li>{t("communityCount", { n: communityCount })}</li>}
         </ul>
-        <ul className="mt-4 divide-y">
-          {top.map((p) => {
-            const d = distanceFrom(p, c);
-            return (
-              <li key={p.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <TierBadge tier={p.tier} label={TIER_LABELS[p.tier][lang]} />
-                  <p className="mt-1 font-semibold leading-snug">{p.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {p.categories.map((cat) => CATEGORY_LABELS[cat][lang]).join("・")}
-                    {d !== undefined && ` · ${d.toFixed(1)} km`}
-                  </p>
-                </div>
-                {p.phone && <CallButton phone={p.phone} label={t("call")} variant="outline" />}
-              </li>
-            );
-          })}
-        </ul>
-        <Button asChild className="mt-3 min-h-12 w-full text-base sm:w-auto">
-          <Link to={mapLink}>
-            {t("seeMap")}
-            <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
-          </Link>
-        </Button>
       </div>
-    </Section>
+      <ProviderExplorer city={loc.city} district={loc.district} onLocation={setLoc} />
+    </div>
   );
 }
 
