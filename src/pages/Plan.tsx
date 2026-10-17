@@ -45,8 +45,9 @@ import {
   nearestTierA,
   providersServing,
 } from "@/lib/data";
-import { CATEGORY_LABELS, ntd, pct, TIER_LABELS } from "@/lib/i18n";
-import { computePlan, LEVELS, type PlanResult } from "@/lib/planEngine";
+import { CATEGORY_LABELS, ntd, ntdRange, pct, TIER_LABELS } from "@/lib/i18n";
+import { districtName, placeName } from "@/lib/places";
+import { computePlan, incomeBandRanges, LEVELS, rate, type PlanResult } from "@/lib/planEngine";
 import type { Answers, CommunityPoint, District, Level, Provider, Rules } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -124,7 +125,7 @@ function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 |
     );
   }
   const { rules, districts, providers, plan, tierA, script } = computed;
-  const place = lang === "zh" ? `${answers.city}${answers.district}` : `${answers.district}, ${answers.city}`;
+  const place = placeName(answers.city, answers.district, lang);
 
   const bannerTone = plan.banner.kind === "assessed" ? "success" : plan.banner.kind === "meets" ? "info" : "warning";
   const bannerIcon = plan.banner.kind === "assessed" ? <BadgeCheck className="h-6 w-6" /> : plan.banner.kind === "meets" ? <Info className="h-6 w-6" /> : <TriangleAlert className="h-6 w-6" />;
@@ -169,7 +170,7 @@ function PlanView({ answers, demo, onSwitchDemo }: { answers: Answers; demo: 1 |
 
       {plan.showBenefits ? (
         <>
-          <Hero plan={plan} rules={rules} onSelect={setSelectedLevel} />
+          <Hero answers={answers} plan={plan} rules={rules} onSelect={setSelectedLevel} />
           <BenefitCards answers={answers} plan={plan} rules={rules} />
         </>
       ) : (
@@ -244,13 +245,15 @@ function AlertsRow({ plan }: { plan: PlanResult }) {
   );
 }
 
-function Hero({ plan, rules, onSelect }: { plan: PlanResult; rules: Rules; onSelect: (l?: Level) => void }) {
-  const { t, tx } = useLang();
+function Hero({ answers, plan, rules, onSelect }: { answers: Answers; plan: PlanResult; rules: Rules; onSelect: (l?: Level) => void }) {
+  const { t, tx, lang } = useLang();
+  const band = answers.incomeBand;
+  const typeNo = { type1: 1, type2: 2, type3: 3 }[plan.copayType];
   return (
     <section className="print-card mt-6 rounded-2xl bg-primary p-4 text-primary-foreground shadow-soft sm:p-5" aria-label={t("heroGovPays")}>
       {plan.care ? (
         <>
-          <p className="text-sm opacity-90">{t("heroCareOnly", { level: plan.care.level })}</p>
+          <p className="text-sm opacity-90">{plan.levelSource === "selected" ? t("heroIfLevel", { level: plan.care.level }) : t("heroCareOnly", { level: plan.care.level })}</p>
           <div className="mt-2 grid grid-cols-2 gap-3">
             <div>
               <div className="text-sm opacity-90">{t("heroGovPays")}</div>
@@ -268,12 +271,21 @@ function Hero({ plan, rules, onSelect }: { plan: PlanResult; rules: Rules; onSel
         <p className="text-lg font-semibold">{t("heroPickLevel")}</p>
       ) : null}
       <p className="mt-3 text-sm opacity-90">{tx(rules.eligibility.income_does_not_reduce_benefit)}</p>
+      {band && band !== "unknown" && (
+        <p className="mt-2 text-sm opacity-90">
+          {t("hhEstimate", {
+            range: ntdRange(incomeBandRanges(rules, answers.city)[band], lang),
+            type: t("copayTypeLabel", { n: typeNo, pct: pct(rate(rules, "care_professional", plan.copayType)) }),
+          })}
+        </p>
+      )}
 
       {plan.showLevelSelector && plan.careTable && (
         <div className="mt-4 rounded-xl bg-card p-3 text-foreground">
           <p className="font-semibold">{t("levelSelectorTitle")}</p>
-          <p className="mb-2 text-sm text-muted-foreground">{tx(rules._wording_rules.amounts_without_level)}</p>
-          <div role="radiogroup" aria-label={t("levelSelectorTitle")} className="divide-y">
+          <p className="text-sm text-muted-foreground">{tx(rules._wording_rules.amounts_without_level)}</p>
+          <p className="mb-2 mt-2 rounded-lg bg-muted/60 p-2 text-sm text-foreground">{t("levelHow")}</p>
+          <div role="radiogroup" aria-label={t("levelSelectorTitle")} className="space-y-1">
             {LEVELS.map((lv) => {
               const row = plan.careTable!.find((r) => r.level === lv)!;
               const on = plan.level === lv;
@@ -537,7 +549,7 @@ function ProvidersSummary({ answers, plan, providers, districts, community }: { 
   return (
     <Section title={t("afterCallTitle")} icon={<MapPinned className="h-5 w-5 text-primary" aria-hidden />} className="no-print">
       <div className="rounded-2xl bg-card p-4 shadow-soft">
-        <p className="text-lg font-semibold">{t("afterCallSub", { n: serving.length.toLocaleString("en-US"), district: answers.district })}</p>
+        <p className="text-lg font-semibold">{t("afterCallSub", { n: serving.length.toLocaleString("en-US"), district: districtName(answers.district, lang) })}</p>
         <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
           {homes.length > 0 && <li>{t("homesOpen", { homes: homes.length, beds: openBeds })}</li>}
           {communityCount > 0 && <li>{t("communityCount", { n: communityCount })}</li>}

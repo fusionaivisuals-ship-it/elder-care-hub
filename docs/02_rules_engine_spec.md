@@ -33,6 +33,7 @@ interface Answers {
 ## 2. Copay
 `rate(category) = rules.copay.rates[category][household==='unknown' ? 'type3' : household]`
 Transport category = `transport_${zone}`; zone from districts.json (Taipei zone1; New Taipei zone2; 烏來區 zone4).
+- **Income bands (wizard step 7, added 2026-10-17):** the wizard asks for average household income per person per month in the official 2026 bands from `ltc_rules.income_bands_2026` (Taipei: ≤20,744 / 20,745–29,635 / 29,636–39,960 / ≥39,961; New Taipei: ≤17,750 / 17,751–26,625 / 26,626–39,960 / ≥39,961). `householdFromIncome(band, age)` maps them to type1 / type1 / type2 (65+ only, else type3) / type3; "not sure" → unknown → type3 + tip. The plan says this is an estimate that applies only after the district office approves the status. Demo cases still set `household` directly.
 
 ## 3. Care & professional services (monthly)
 - `cap = monthly_care_cap_ntd[level]`

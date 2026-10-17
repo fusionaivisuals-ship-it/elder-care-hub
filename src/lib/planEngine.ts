@@ -1,6 +1,6 @@
 // CareMap rules engine (docs/02). Pure, deterministic functions; all NT$ math lives here.
 // Inputs: wizard answers + ltc_rules.json. No AI, no guessing. NT$ rounded with Math.round.
-import type { Answers, CopayType, Household, LText, Level, Rules, Zone } from "./types";
+import type { AgeBand, Answers, City, CopayType, Household, IncomeBand, LText, Level, Rules, Zone } from "./types";
 
 export type RateCategory = "care_professional" | "respite" | "devices_home" | `transport_${Zone}`;
 
@@ -151,6 +151,24 @@ export function identityOk(a: Pick<Answers, "age" | "indigenous" | "dementia" | 
 
 export function copayType(h: Household): CopayType {
   return h === "unknown" ? "type3" : h;
+}
+
+/** Income band → copay household type. Seniors' allowance (type 2 band) only exists for 65+. */
+export function householdFromIncome(rules: Rules, band: IncomeBand, age: AgeBand): Household {
+  if (band === "unknown") return "unknown";
+  const m = rules.income_bands_2026.mapping[band];
+  return age !== "65plus" && m.copay_if_under_65 ? m.copay_if_under_65 : m.copay;
+}
+
+/** NT$ limits of each band for a city: [from, to] per person per month (to undefined = no upper limit). */
+export function incomeBandRanges(rules: Rules, city: City): Record<Exclude<IncomeBand, "unknown">, [number, number | undefined]> {
+  const c = rules.income_bands_2026[city];
+  return {
+    low: [0, c.min_living_cost],
+    midlow: [c.min_living_cost + 1, c.midlow_and_allowance_full],
+    allowance2: [c.midlow_and_allowance_full + 1, c.allowance_upper],
+    general: [c.allowance_upper + 1, undefined],
+  };
 }
 
 export function rate(rules: Rules, category: RateCategory, household: Household): number {

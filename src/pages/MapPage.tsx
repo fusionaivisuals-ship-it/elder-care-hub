@@ -27,6 +27,7 @@ import {
   wantsResidential,
 } from "@/lib/data";
 import { CATEGORY_LABELS, OWNERSHIP_LABELS, TIER_LABELS } from "@/lib/i18n";
+import { cityName, DISTRICT_EN, districtName, sortDistricts } from "@/lib/places";
 import { identityOk } from "@/lib/planEngine";
 import type { Category, City, CommunityPoint, District, Provider } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -37,7 +38,7 @@ type Filter = "suggested" | "all" | "residential" | Category;
 const FILTER_CATS: Category[] = ["case_management", "home_care", "day_care", "professional", "respite", "transport", "devices_home", "home_doctor", "meals"];
 
 const MapPage = () => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { answers, selectedLevel } = usePlan();
   const [params, setParams] = useSearchParams();
   const districts = useData(loadDistricts, []);
@@ -84,15 +85,19 @@ const MapPage = () => {
                 }}
               >
                 {CITIES.map((c) => (
-                  <option key={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {cityName(c, lang)}
+                  </option>
                 ))}
               </select>
             </label>
             <label className="text-sm text-muted-foreground">
               {t("district")}
               <select className="mt-1 block min-h-12 w-full rounded-xl border bg-card px-3 text-base text-foreground" value={district} onChange={(e) => setDistrict(e.target.value)}>
-                {getDistricts(districts.data, city).map((d) => (
-                  <option key={d.district}>{d.district}</option>
+                {sortDistricts(getDistricts(districts.data, city), lang).map((d) => (
+                  <option key={d.district} value={d.district}>
+                    {lang === "en" ? `${DISTRICT_EN[d.district] ?? d.district} (${d.district})` : d.district}
+                  </option>
                 ))}
               </select>
             </label>
@@ -154,7 +159,7 @@ function ProviderItem({ p, center, district }: { p: Provider; center?: { lat: nu
         <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
         {p.address}
       </a>
-      {p.district !== district && <p className="mt-1 text-xs text-muted-foreground">{t("servesDistrict", { district: p.district })}</p>}
+      {p.district !== district && <p className="mt-1 text-xs text-muted-foreground">{t("servesDistrict", { district: districtName(p.district, lang) })}</p>}
       <p className="mt-2 text-sm">{(lang === "zh" ? p.services : p.services_en).join("、")}</p>
       {p.is_residential && p.beds > 0 && (
         <p className={cn("mt-1 flex items-center gap-1 text-sm font-semibold", p.open_beds > 0 ? "text-success" : "text-muted-foreground")}>
@@ -281,7 +286,7 @@ function Subsidized({
           <p>{t("emptyFilter")}</p>
           {!wide && (
             <Button className="mt-3 min-h-12" onClick={() => setWide(true)}>
-              {t("widenCity")} ({city})
+              {t("widenCity")} ({cityName(city, lang)})
             </Button>
           )}
         </div>
@@ -356,7 +361,7 @@ function Community({ providers, community, city, district, center }: { providers
 }
 
 function SelfPay({ providers, district, center, overCap }: { providers: Provider[]; district: string; center?: { lat: number; lng: number }; overCap: { zh: string; en: string } }) {
-  const { t, tx } = useLang();
+  const { t, tx, lang } = useLang();
   const serving = providersServing(providers, district);
   const home = serving.filter((p) => p.categories.includes("home_care")).length;
   const day = serving.filter((p) => p.categories.includes("day_care")).length;
@@ -379,7 +384,7 @@ function SelfPay({ providers, district, center, overCap }: { providers: Provider
           <BedDouble className="h-5 w-5 text-primary" aria-hidden />
           {t("selfPayHomesTitle")} · {homes.length}
         </h2>
-        <p className="mb-3 text-sm text-muted-foreground">{t("selfPayHomesBody", { district })}</p>
+        <p className="mb-3 text-sm text-muted-foreground">{t("selfPayHomesBody", { district: districtName(district, lang) })}</p>
         {homes.length ? <PagedList items={homes} center={center} district={district} /> : <p className="text-muted-foreground">{t("noneHere")}</p>}
       </section>
       <p className="text-sm text-muted-foreground">{t("selfPayNoListing")}</p>

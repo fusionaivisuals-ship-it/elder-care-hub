@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildCallScript } from "./callScript";
 import { districtCentroid, findDistrict, getDistricts, getProvidersFor, nearestTierA, providersServing } from "./data";
-import { carryoverPeriod, computeDevices, computePlan, computeResidential, computeRespite, computeTransport, identityOk } from "./planEngine";
+import { carryoverPeriod, computeDevices, computePlan, computeResidential, computeRespite, computeTransport, householdFromIncome, identityOk, incomeBandRanges } from "./planEngine";
 import type { Answers, DemoCases, District, Provider, Rules } from "./types";
 
 const read = <T,>(f: string): T => JSON.parse(readFileSync(resolve(__dirname, "../../public/data", f), "utf-8"));
@@ -118,6 +118,21 @@ describe("planEngine (docs/02 unit tests)", () => {
   it("residentBefore2023 without level 4 → 5000", () => {
     expect(computeResidential({ disabilityCert: false, residentBefore2023: true }, 3).monthly).toBe(5000);
     expect(computeResidential({ disabilityCert: false }, 3).status).toBe("not_eligible");
+  });
+});
+
+describe("income bands (2026 official thresholds)", () => {
+  it("Taipei and New Taipei ranges", () => {
+    expect(incomeBandRanges(rules, "臺北市")).toEqual({ low: [0, 20744], midlow: [20745, 29635], allowance2: [29636, 39960], general: [39961, undefined] });
+    expect(incomeBandRanges(rules, "新北市").midlow).toEqual([17751, 26625]);
+  });
+  it("band → copay type; reduced senior allowance band only for 65+", () => {
+    expect(householdFromIncome(rules, "low", "65plus")).toBe("type1");
+    expect(householdFromIncome(rules, "midlow", "55_64")).toBe("type1");
+    expect(householdFromIncome(rules, "allowance2", "65plus")).toBe("type2");
+    expect(householdFromIncome(rules, "allowance2", "55_64")).toBe("type3");
+    expect(householdFromIncome(rules, "general", "65plus")).toBe("type3");
+    expect(householdFromIncome(rules, "unknown", "65plus")).toBe("unknown");
   });
 });
 

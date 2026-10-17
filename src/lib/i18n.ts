@@ -1,10 +1,17 @@
 // Simple i18n dictionary. Traditional Chinese is the default; English is the toggle.
-import type { Category, LText, Need, Ownership } from "./types";
+import type { Category, Lang, LText, Need, Ownership } from "./types";
 
 export const DATA_UPDATED = "2026-10-16";
 
 export function ntd(n: number): string {
   return `NT$${Math.round(n).toLocaleString("en-US")}`;
+}
+
+/** Income range label: "每人每月 NT$20,744 以下" / "NT$20,745–29,635" / "每人每月 NT$39,961 以上". */
+export function ntdRange([from, to]: [number, number | undefined], lang: Lang): string {
+  if (to === undefined) return format(dict.hhAbove[lang], { n: ntd(from) });
+  if (from === 0) return format(dict.hhBelow[lang], { n: ntd(to) });
+  return `${ntd(from)}–${ntd(to).replace("NT$", "")}`;
 }
 
 export function pct(r: number): string {
@@ -139,13 +146,23 @@ export const dict = {
   subPlacement: { zh: "中低收入失能老人公費安置", en: "Public placement" },
   subVeterans: { zh: "榮民之家公費床位", en: "Veterans' home public bed" },
   subNone: { zh: "都沒有", en: "None" },
-  qHousehold: { zh: "家裡的經濟身分", en: "Household status" },
-  qHouseholdHelp: { zh: "長照補助不會因收入打折，只影響自付比例", en: "Benefits aren't reduced by income; only your copay changes" },
+  qHousehold: { zh: "家裡每人每月收入大約多少？", en: "About how much income per person per month?" },
+  qHouseholdHelp: {
+    zh: "全家每月總收入 ÷ 全家人數（以長輩戶籍上的家人計算）。長照補助不會因收入打折，只影響你自付的比例。",
+    en: "Total monthly household income ÷ number of people in your parent's registered household. Benefits aren't reduced by income; only your copay changes.",
+  },
+  hhBelow: { zh: "每人每月 {n} 以下", en: "{n} or less per person" },
+  hhAbove: { zh: "每人每月 {n} 以上", en: "{n} or more per person" },
+  hhCopay: { zh: "長照自付約 {pct}", en: "care copay about {pct}" },
   hhType1: { zh: "低收入戶或中低收入戶", en: "Low-income or mid-low-income household" },
   hhType2: { zh: "領中低收入老人生活津貼或身障生活補助", en: "Receives the low-middle-income senior allowance or disability living allowance" },
   hhType3: { zh: "一般戶", en: "General household" },
   hhUnknown: { zh: "不確定", en: "Not sure" },
   hhUnknownTip: { zh: "我們先用一般戶計算（自付最高）。可向區公所確認是否符合低收／中低收身分。", en: "We'll calculate as a general household (highest copay). Ask the district office whether you qualify for low-income status." },
+  hhEstimate: {
+    zh: "依你選的收入範圍（{range}），自付比例估計為{type}。需要向區公所申請核定後才適用；核定前以一般戶計費。",
+    en: "Based on the income range you chose ({range}), your copay is estimated as {type}. It applies only after the district office approves the status; until then the general-household copay applies.",
+  },
   seePlan: { zh: "看我的照護計畫", en: "See my care plan" },
 
   // plan
@@ -177,6 +194,12 @@ export const dict = {
   heroGovPays: { zh: "政府每月補助", en: "Government pays per month" },
   heroYouPay: { zh: "你每月自付", en: "You pay per month" },
   heroCareOnly: { zh: "照顧及專業服務，第 {level} 級", en: "Care & professional services, level {level}" },
+  heroIfLevel: { zh: "如果評估為第 {level} 級（你點選的範例，不是預測）", en: "If assessed at level {level} (the example you tapped, not a prediction)" },
+  levelHow: {
+    zh: "CareMap 不會計算或猜測等級。等級由照管專員到府評估長輩的日常生活與照顧需要後決定（第1–8級，第2級以上才有給付）。點一個等級，看看那一級政府補助多少、你付多少。",
+    en: "CareMap never calculates or guesses the level. A government care manager sets it after a home assessment of your parent's daily-living and care needs (levels 1–8; benefits start at level 2). Tap a level to see what the government pays and what you'd pay at that level.",
+  },
+  copayTypeLabel: { zh: "第{n}類（照顧服務自付 {pct}）", en: "type {n} (care copay {pct})" },
   heroPickLevel: { zh: "選一個等級，看看政府補助多少、你付多少", en: "Pick a level to see what the government pays and what you pay" },
   levelSelectorTitle: { zh: "各等級官方額度", en: "Official amounts by level" },
   levelSelectorHint: { zh: "點一個等級看細節。實際等級由評估決定。", en: "Tap a level to see the details. The assessment sets the actual level." },

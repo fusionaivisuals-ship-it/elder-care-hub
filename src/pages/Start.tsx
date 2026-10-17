@@ -11,9 +11,11 @@ import { LoadState, Page } from "@/components/Shell";
 import { usePlan } from "@/context/PlanContext";
 import { useData } from "@/hooks/useData";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { CITIES, getDistricts, loadDistricts } from "@/lib/data";
-import { NEED_LABELS, type DictKey } from "@/lib/i18n";
-import type { Answers, Level, Need, OtherResidentialSubsidy } from "@/lib/types";
+import { CITIES, getDistricts, loadDistricts, loadRules } from "@/lib/data";
+import { NEED_LABELS, ntd, pct, type DictKey } from "@/lib/i18n";
+import { householdFromIncome, incomeBandRanges, rate } from "@/lib/planEngine";
+import { cityName, DISTRICT_EN, sortDistricts } from "@/lib/places";
+import type { Answers, IncomeBand, Level, Need, OtherResidentialSubsidy } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type StepId = "location" | "who" | "status" | "used" | "needs" | "living" | "household";
@@ -22,7 +24,7 @@ const NEEDS = Object.keys(NEED_LABELS) as Need[];
 const LEVELS: Level[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
 interface ChoiceProps<T extends string | number> {
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; hint?: string }[];
   selected: T[];
   onToggle: (v: T) => void;
   multi?: boolean;
@@ -47,7 +49,10 @@ function Choice<T extends string | number>({ options, selected, onToggle, multi,
               on ? "border-primary bg-secondary text-primary" : "border-border hover:border-primary/40",
             )}
           >
-            <span className="min-w-0 [overflow-wrap:anywhere]">{o.label}</span>
+            <span className="min-w-0 [overflow-wrap:anywhere]">
+              {o.label}
+              {o.hint && <span className={cn("block text-sm", on ? "text-primary/80" : "text-muted-foreground")}>{o.hint}</span>}
+            </span>
             {on && <Check className="h-5 w-5 shrink-0" aria-hidden />}
           </button>
         );
@@ -88,7 +93,10 @@ const Start = () => {
   const { t, lang } = useLang();
   const navigate = useNavigate();
   const { draft: d, setDraft, setAnswers, setSelectedLevel, setDemo } = usePlan();
-  const districts = useData(loadDistricts, []);
+  // districts + rules (income bands) are both needed by the wizard
+  const data = useData(() => Promise.all([loadDistricts(), loadRules()]), []);
+  const districts = { ...data, data: data.data?.[0] };
+  const rules = data.data?.[1];
   const [i, setI] = useState(0);
   useDocumentTitle(t("start"));
   useEffect(() => {
@@ -111,7 +119,7 @@ const Start = () => {
     used: !deviceMonthMissing,
     needs: true,
     living: !!d.living && (d.living !== "residential" || d.residentBefore2023 !== undefined),
-    household: !!d.household,
+    household: !!d.incomeBand,
   };
 
   const finish = () => {
@@ -137,7 +145,8 @@ const Start = () => {
       living: d.living!,
       residentBefore2023: residential ? d.residentBefore2023 : undefined,
       otherResidentialSubsidies: residential ? d.otherResidentialSubsidies ?? [] : undefined,
-      household: d.household!,
+      household: rules ? householdFromIncome(rules, d.incomeBand!, d.age!) : "unknown",
+      incomeBand: d.incomeBand,
     };
     setAnswers(a);
     setSelectedLevel(undefined);
@@ -157,14 +166,18 @@ const Start = () => {
       body = (
         <div className="space-y-6">
           <Field label={t("city")} help={t("qCityHelp")}>
-            <Choice label={t("city")} columns={2} options={CITIES.map((c) => ({ value: c, label: c }))} selected={d.city ? [d.city] : []} onToggle={(c) => set({ city: c, district: c === d.city ? d.district : undefined })} />
+            <Choice label={t("city")} columns={2} options={CITIES.map((c) => ({ value: c, label: cityName(c, lang), hint: lang === "en" ? c : undefined }))} selected={d.city ? [d.city] : []} onToggle={(c) => set({ city: c, district: c === d.city ? d.district : undefined })} />
           </Field>
           {d.city && (
             <Field label={t("district")}>
               <Choice
                 label={t("district")}
                 columns={2}
-                options={getDistricts(districts.data, d.city).map((x) => ({ value: x.district, label: x.district }))}
+                options={sortDistricts(getDistricts(districts.data, d.city), lang).map((x) => ({
+                  value: x.district,
+                  label: lang === "en" ? DISTRICT_EN[x.district] ?? x.district : x.district,
+                  hint: lang === "en" ? x.district : undefined,
+                }))}
                 selected={d.district ? [d.district] : []}
                 onToggle={(v) => set({ district: v })}
               />
@@ -334,23 +347,35 @@ const Start = () => {
       </div>
     );
   } else if (step === "household") {
-    body = (
-      <div className="space-y-4">
-        <p className="text-muted-foreground">{t("qHouseholdHelp")}</p>
-        <Choice
-          label={t("qHousehold")}
-          options={[
-            { value: "type1" as const, label: t("hhType1") },
-            { value: "type2" as const, label: t("hhType2") },
-            { value: "type3" as const, label: t("hhType3") },
-            { value: "unknown" as const, label: t("hhUnknown") },
-          ]}
-          selected={d.household ? [d.household] : []}
-          onToggle={(v) => set({ household: v })}
-        />
-        {d.household === "unknown" && <p className="rounded-xl bg-secondary p-3 text-sm text-secondary-foreground">{t("hhUnknownTip")}</p>}
-      </div>
-    );
+    if (!rules || !d.city || !d.age) body = <LoadState error={data.error} onRetry={data.retry} />;
+    else {
+      const ranges = incomeBandRanges(rules, d.city);
+      const copayHint = (band: IncomeBand) => t("hhCopay", { pct: pct(rate(rules, "care_professional", householdFromIncome(rules, band, d.age!))) });
+      const range = ([from, to]: [number, number | undefined]) => (to === undefined ? t("hhAbove", { n: ntd(from) }) : from === 0 ? t("hhBelow", { n: ntd(to) }) : `${ntd(from)}–${ntd(to).replace("NT$", "")}`);
+      const m = rules.income_bands_2026.mapping;
+      const bandHint = (b: Exclude<IncomeBand, "unknown">) => (b === "allowance2" && d.age !== "65plus" ? t("hhType3") : m[b][lang]);
+      body = (
+        <div className="space-y-4">
+          <p className="text-muted-foreground">{t("qHouseholdHelp")}</p>
+          <Choice
+            label={t("qHousehold")}
+            options={[
+              ...(["low", "midlow", "allowance2", "general"] as const).map((b) => ({ value: b as IncomeBand, label: range(ranges[b]), hint: `${bandHint(b)} · ${copayHint(b)}` })),
+              { value: "unknown" as IncomeBand, label: t("hhUnknown"), hint: copayHint("unknown") },
+            ]}
+            selected={d.incomeBand ? [d.incomeBand] : []}
+            onToggle={(v) => set({ incomeBand: v })}
+          />
+          {d.incomeBand === "unknown" && <p className="rounded-xl bg-secondary p-3 text-sm text-secondary-foreground">{t("hhUnknownTip")}</p>}
+          <p className="text-sm text-muted-foreground">
+            {rules.income_bands_2026.also_asset_tests[lang]}{" "}
+            <a href={rules._sources[d.city === "臺北市" ? "taipei_midlow_household" : "ntpc_senior_allowance"]} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center text-primary underline underline-offset-2">
+              {t("source")}
+            </a>
+          </p>
+        </div>
+      );
+    }
   }
 
   return (

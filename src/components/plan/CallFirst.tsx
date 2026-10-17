@@ -5,6 +5,7 @@ import { useLang } from "@/components/LanguageProvider";
 import type { CallScript } from "@/lib/callScript";
 import { mapsSearchUrl, phoneDisplay, phoneHref } from "@/lib/data";
 import type { PlanResult } from "@/lib/planEngine";
+import { cityName } from "@/lib/places";
 import type { Answers, Provider, Rules } from "@/lib/types";
 
 export function CallButton({ phone, label, variant = "default" }: { phone: string; label?: string; variant?: "default" | "outline" }) {
@@ -20,9 +21,9 @@ export function CallButton({ phone, label, variant = "default" }: { phone: strin
 }
 
 export function CallFirst({ answers, plan, rules, tierA, script }: { answers: Answers; plan: PlanResult; rules: Rules; tierA?: Provider; script: CallScript }) {
-  const { t, tx } = useLang();
+  const { t, tx, lang } = useLang();
   const center = rules.online_application[answers.city];
-  const centerName = `${answers.city}長期照顧管理中心`;
+  const centerName = lang === "en" ? `${cityName(answers.city, lang)} Long-Term Care Management Center` : `${answers.city}長期照顧管理中心`;
 
   const centerBlock = (
     <div className="space-y-2">

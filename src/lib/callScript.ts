@@ -1,6 +1,7 @@
 // Template-built call script (docs/01 screen 3). Deterministic: every number comes from the PlanResult.
 import { phoneDisplay } from "./data";
 import { NEED_LABELS, ntd } from "./i18n";
+import { CITY_EN, placeName } from "./places";
 import type { PlanResult } from "./planEngine";
 import type { Answers, Provider, Rules } from "./types";
 
@@ -18,7 +19,7 @@ export function buildCallScript(a: Answers, plan: PlanResult, rules: Rules, tier
   const center = rules.online_application[a.city];
   const needsZh = a.needs.map((n) => NEED_LABELS[n].zh).join("、");
   const needsEn = a.needs.map((n) => NEED_LABELS[n].en.toLowerCase()).join(", ");
-  const where = { zh: `${a.city}${a.district}`, en: `${a.district}, ${a.city}` };
+  const where = { zh: placeName(a.city, a.district, "zh"), en: placeName(a.city, a.district, "en") };
 
   const docs = { zh: ["長輩的身分證與健保卡", "你的聯絡電話，以及其他家人的聯絡方式"], en: ["Your parent's ID card and NHI card", "Your phone number and other family contacts"] };
   if (a.disabilityCert) {
@@ -106,7 +107,7 @@ export function buildCallScript(a: Answers, plan: PlanResult, rules: Rules, tier
   // city_center: never applied / waiting for assessment
   const waiting = a.status === "waiting";
   return {
-    who: { zh: `${a.city}長期照顧管理中心`, en: `${a.city} Long-Term Care Management Center` },
+    who: { zh: `${a.city}長期照顧管理中心`, en: `${CITY_EN[a.city]} Long-Term Care Management Center` },
     phone: center.center_phone,
     say: {
       zh: [

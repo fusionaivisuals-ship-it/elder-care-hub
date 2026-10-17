@@ -12,6 +12,8 @@ export type AgeBand = "u50" | "50_54" | "55_64" | "65plus";
 export type LtcStatus = "never" | "waiting" | "assessed" | "in_hospital";
 export type Living = "home_family" | "home_none" | "residential"; // foreign/live-in caregivers are out of scope
 export type Household = "type1" | "type2" | "type3" | "unknown"; // unknown → type3 + tip
+/** Average household income per person per month, in official 2026 bands (ltc_rules.income_bands_2026). */
+export type IncomeBand = "low" | "midlow" | "allowance2" | "general" | "unknown";
 export type CopayType = "type1" | "type2" | "type3";
 export type DisabilityLevel = "mild" | "moderate" | "severe" | "profound";
 export type Level = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
@@ -51,6 +53,8 @@ export interface Answers {
   residentBefore2023?: boolean;
   otherResidentialSubsidies?: OtherResidentialSubsidy[];
   household: Household;
+  /** Set by the wizard; household is derived from it. Demo cases set household directly. */
+  incomeBand?: IncomeBand;
 }
 
 export type Category =
@@ -169,6 +173,11 @@ export interface Rules {
       not_eligible_facilities: LText;
     };
   };
+  income_bands_2026: {
+    _note: string;
+    mapping: Record<Exclude<IncomeBand, "unknown">, LText & { copay: CopayType; copay_if_under_65?: CopayType }>;
+    also_asset_tests: LText;
+  } & Record<City, { min_living_cost: number; midlow_and_allowance_full: number; allowance_upper: number }>;
   tax_deduction: LText;
   hotlines: (LText & { number: string; verified: boolean })[];
   unverified_or_varies: string[];
